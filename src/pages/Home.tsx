@@ -215,9 +215,9 @@ function ExperienceSection() {
           <div className="experience-date">Present</div>
           <div className="experience-detail">
             <div className="experience-meta"><span>Current role</span></div>
-            <h3>Junior Developer</h3>
-            <p className="experience-company">Company name · Add your start date</p>
-            <p>Building reliable features, learning from experienced teammates, and turning product requirements into clear, usable experiences.</p>
+            <h3>Junior Fullstack Developer</h3>
+            <p className="experience-company">Iloilo City Government · August 2025 - Present</p>
+            <p>Building a web-based system to digitalize and streamline manual internal processes within the city government, while learning from experienced teammates and developing reliable, user-friendly features based on organizational requirements.</p>
           </div>
         </article>
         <article className="experience-item">
@@ -226,21 +226,20 @@ function ExperienceSection() {
           <div className="experience-detail">
             <div className="experience-meta"><span>Internship</span></div>
             <h3>Software Development Intern</h3>
-            <p className="experience-company">Company name · Add your dates</p>
+            <p className="experience-company">Warp Prometheus · Jan 2025 - April 2025</p>
             <p>Contributed to development work in a team environment while building confidence with code reviews, debugging, and shipping improvements.</p>
           </div>
         </article>
       </div>
       <div className="education-card">
-        <div className="education-icon"><span>ED</span></div>
         <div>
           <div className="experience-meta"><span>Education</span></div>
           <h3>Graduate School · Year 1</h3>
-          <p className="experience-company">Master&apos;s program / University name · Currently enrolled</p>
+          <p className="experience-company">Master in Information Technology / West Visayas State University <span style={{ whiteSpace: "nowrap" }}>· Currently enrolled</span></p>
           <p>Currently pursuing the first year of graduate school and continuing to deepen my knowledge and prepare for thoughtful work in technology.</p>
           <div className="undergraduate-entry">
             <strong>Bachelor&apos;s Degree</strong>
-            <span>Undergraduate program / University name · Completed</span>
+            <span>Bachelor of Science in Information Technology - Magna Cum Laude / West Visayas State University · Completed </span>
           </div>
         </div>
       </div>
