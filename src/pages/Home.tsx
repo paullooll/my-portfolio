@@ -8,7 +8,10 @@ import {
   Code2,
   Github,
   Globe2,
+  Dumbbell,
+  Gamepad2,
   Heart,
+  Plane,
   Home as HomeIcon,
   Linkedin,
   Mail,
@@ -181,16 +184,13 @@ function AboutSection({ goTo }: { goTo: (section: Section) => void }) {
           <ArrowLink onClick={() => goTo("experience")}>See my background</ArrowLink>
         </div>
       </div>
-      <div className="values-grid">
-        <div className="value-card"><span>01</span><strong>Stay curious</strong><p>Keep asking “why?” until the problem is clearer.</p></div>
-        <div className="value-card"><span>02</span><strong>Make it useful</strong><p>Prefer thoughtful, understandable solutions over noise.</p></div>
-        <div className="value-card"><span>03</span><strong>Keep showing up</strong><p>Small, consistent practice adds up over time.</p></div>
-      </div>
       <div className="about-hobbies">
         <div className="about-hobbies-heading"><Eyebrow>Outside the browser</Eyebrow><h3>The things that keep me curious.</h3></div>
         <div className="about-hobbies-grid">
           <article className="about-hobby-card about-hobby-listening"><div className="about-hobby-top"><span className="hobby-icon"><Heart size={16} fill="currentColor" /></span><span>Spotify-ready</span></div><div><p className="hobby-label">Currently listening</p><strong>Your favorite playlist</strong><p>Add a Spotify embed now, or connect the API later to show what&apos;s playing in real time.</p></div><button className="hobby-link" type="button">Add playlist <ArrowUpRight size={15} /></button></article>
-          <article className="about-hobby-card"><div className="about-hobby-top"><span className="hobby-icon"><Sparkles size={16} /></span><span>Personal interests</span></div><div><p className="hobby-label">Beyond code</p><strong>Music, making, and new ideas</strong><p>A compact space for the creative activities, books, games, or rituals that are part of your story.</p></div></article>
+          <article className="about-hobby-card"><div className="about-hobby-top"><span className="hobby-icon"><Gamepad2 size={16} /></span><span>Gaming</span></div><div><p className="hobby-label">What I play</p><strong>Favorite games</strong><p>I enjoy playing games across both PC and mobile, from competitive titles like Valorant, Wild Rift, and Teamfight Tactics to sports games and MMORPGs.</p></div></article>
+          <article className="about-hobby-card"><div className="about-hobby-top"><span className="hobby-icon"><Dumbbell size={16} /></span><span>Physical activities</span></div><div><p className="hobby-label">Staying active</p><strong>Movement & discipline</strong><p>I enjoy going for a jog and playing basketball in my free time, keeping physical activity as part of my routine. Both give me a way to stay active, maintain my fitness, and take a break from work and other daily activities.</p></div></article>
+          <article className="about-hobby-card"><div className="about-hobby-top"><span className="hobby-icon"><Plane size={16} /></span><span>Unwind & travel</span></div><div><p className="hobby-label">Break & explore</p><strong>Places & escapes</strong><p>I enjoy visiting different places in my free time, taking the opportunity to relax, unwind, and step away from my usual routine. Exploring new places gives me a chance to enjoy different surroundings and spend time doing things at my own pace.</p></div></article>
         </div>
       </div>
     </section>
