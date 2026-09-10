@@ -430,7 +430,6 @@ export default function Home() {
     <div className="portfolio-shell" ref={pageRef}>
       <aside className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-brand">
-          <button className="monogram" aria-label="Go to home" onClick={() => goTo("home")} type="button">RP</button>
           <div><strong>Richie Paul Aquiño</strong><span>Developer in progress</span></div>
         </div>
         <div className="sidebar-label">Explore</div>
