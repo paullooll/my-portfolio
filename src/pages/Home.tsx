@@ -41,19 +41,19 @@ const navItems: { id: Section; label: string; icon: IconComponent }[] = [
 
 const skillGroups = [
   {
-    label: "Languages",
+    label: "Languages, Frameworks & Platforms",
     number: "01",
-    skills: ["HTML", "CSS", "JavaScript", "TypeScript"],
+    skills: ["HTML", "CSS", "JavaScript", "TypeScript", "PHP", "Python", "Dart", "Flutter", "React", "TailwindCSS", "NodeJS"],
   },
   {
-    label: "Tools",
+    label: "Databases & Tools",
     number: "02",
-    skills: ["Git & GitHub", "VS Code", "Figma", "Chrome DevTools"],
+    skills: ["MySQL", "Firebase", "VS Code", "Antigravity", "OpenCode", "Manus", "Git and Github"],
   },
   {
-    label: "Currently learning",
+    label: "Currently Learning",
     number: "03",
-    skills: ["React", "Tailwind CSS", "REST APIs", "Accessibility"],
+    skills: ["Vite", "NextJS", "NestJS", "Express", "Docker", "MongoDB", "PostgreSQL", "Google Colab"],
   },
 ];
 
@@ -271,11 +271,6 @@ function SkillsSection() {
             </div>
           </article>
         ))}
-      </div>
-      <div className="learning-banner">
-        <div className="learning-icon"><MonitorSmartphone size={22} /></div>
-        <div><strong>Next on the desk</strong><p>Building a small React project with an accessible component system.</p></div>
-        <ChevronRight className="banner-arrow" size={20} />
       </div>
     </section>
   );
