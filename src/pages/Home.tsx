@@ -6,11 +6,13 @@ import {
   Check,
   ChevronRight,
   Code2,
+  Facebook,
   Github,
   Globe2,
   Dumbbell,
   Gamepad2,
   Heart,
+  Instagram,
   Plane,
   Home as HomeIcon,
   Linkedin,
@@ -430,7 +432,6 @@ export default function Home() {
     <div className="portfolio-shell" ref={pageRef}>
       <aside className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
         <div className="sidebar-brand">
-          <button className="monogram" aria-label="Go to home" onClick={() => goTo("home")} type="button">RP</button>
           <div><strong>Richie Paul Aquiño</strong><span>Developer in progress</span></div>
         </div>
         <div className="sidebar-label">Explore</div>
@@ -442,8 +443,8 @@ export default function Home() {
         </nav>
         <div className="sidebar-bottom">
           <div className="availability"><span className="pulse-dot" /><span>Open to opportunities</span></div>
-          <div className="sidebar-socials"><a href="https://github.com/richiepaulaquino" target="_blank" rel="noreferrer" aria-label="Richie on GitHub"><Github size={17} /></a><a href="https://www.linkedin.com" target="_blank" rel="noreferrer" aria-label="Richie on LinkedIn"><Linkedin size={17} /></a><a href="mailto:hello@richiepaulaquino.dev" aria-label="Email Richie"><Mail size={17} /></a></div>
-          <p className="sidebar-footnote">© 2026 · Made with patience<br />and a lot of browser tabs.</p>
+          <div className="sidebar-socials"><a href="https://www.facebook.com/richiepaul.lagamonaquino" target="_blank" rel="noreferrer" aria-label="Richie on Facebook"><Facebook size={17} /></a><a href="https://www.instagram.com/ret.cheee/" target="_blank" rel="noreferrer" aria-label="Richie on Instagram"><Instagram size={17} /></a><a href="https://github.com/paullooll" target="_blank" rel="noreferrer" aria-label="Richie on GitHub"><Github size={17} /></a><a href="https://www.linkedin.com/in/richie-paul-aquiño-2bb196265" target="_blank" rel="noreferrer" aria-label="Richie on LinkedIn"><Linkedin size={17} /></a></div>
+          <p className="sidebar-footnote">© 2026 | All Rights Reserved</p>
         </div>
       </aside>
 
