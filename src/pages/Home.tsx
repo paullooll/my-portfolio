@@ -125,7 +125,8 @@ function HomeSection({ goTo }: { goTo: (section: Section) => void }) {
             <span>Currently exploring</span>
             <span className="note-index">01 / 05</span>
           </div>
-          <div className="note-illustration">
+          <div className="note-illustration has-photo">
+            <img className="note-photo" src="/light.png" alt="Richie Paul Aquino" onError={(e) => ((e.currentTarget.style.display = "none"))} />
             <div className="sun-shape" />
             <div className="note-card note-card-back" />
             <div className="note-card note-card-front">
