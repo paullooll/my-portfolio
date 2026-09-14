@@ -13,6 +13,7 @@ import {
   Gamepad2,
   Heart,
   Instagram,
+  Lock,
   Plane,
   Home as HomeIcon,
   Linkedin,
@@ -62,30 +63,45 @@ const skillGroups = [
 const projects = [
   {
     number: "01",
-    type: "Learning project",
-    title: "Daylight Notes",
-    description:
-      "A calm, browser-based notes space with simple tags and a focused writing flow.",
-    stack: ["HTML", "CSS", "JavaScript"],
+    type: "Web app",
+    group: "web" as const,
+    title: "AmbatuHelp",
+    description: "Confidential work project — details and code are private. Screenshot shown with permission; repo not public.",
+    stack: ["React", "TailwindCSS", "Firebase"],
     color: "apricot",
+    image: "/projects/ambatuhelp.png",
+    private: true as const,
   },
   {
     number: "02",
-    type: "Practice build",
-    title: "Plant Parent",
-    description:
-      "A small responsive dashboard for keeping track of watering reminders and light needs.",
-    stack: ["React", "CSS", "Local storage"],
+    type: "Web app",
+    group: "web" as const,
+    title: "Budget Tracker",
+    description: "Confidential work project — internal system. Code is private and not available for public viewing.",
+    stack: ["JavaScript", "React", "MySQL"],
     color: "sage",
+    image: "/projects/budget%20tracker.png",
+    private: true as const,
   },
   {
     number: "03",
-    type: "Exploration",
-    title: "City Bites",
-    description:
-      "A mobile-first restaurant list exploring filters, cards, and thoughtful empty states.",
-    stack: ["JavaScript", "API basics", "Figma"],
+    type: "Mobile app",
+    group: "mobile" as const,
+    title: "ChorDefine",
+    description: "Screenshot from ChorDefine — replace with a short description of what the app does and your contributions.",
+    stack: ["Flutter", "Dart", "Firebase"],
     color: "lilac",
+    image: "/projects/chordefine.png",
+  },
+  {
+    number: "04",
+    type: "Mobile app",
+    group: "mobile" as const,
+    title: "Solid",
+    description: "Screenshot from Solid — add your overview, tech used, and link to code or live demo.",
+    stack: ["Flutter", "Dart", "MySQL"],
+    color: "apricot",
+    image: "/projects/solid.png",
   },
 ];
 
@@ -279,6 +295,9 @@ function SkillsSection() {
 }
 
 function ProjectsSection() {
+  const [filter, setFilter] = useState<"All" | "Web" | "Mobile">("All");
+  const filtered = filter === "All" ? projects : projects.filter((p) => p.group === filter.toLowerCase());
+
   return (
     <section className="section-stack" aria-labelledby="projects-heading">
       <div className="section-heading-row">
@@ -288,19 +307,45 @@ function ProjectsSection() {
         </div>
         <span className="section-count">04 / 06</span>
       </div>
+      <div className="project-filters" role="tablist" aria-label="Filter projects">
+        {(["All", "Web", "Mobile"] as const).map((cat) => (
+          <button
+            key={cat}
+            role="tab"
+            aria-selected={filter === cat}
+            className={`filter-pill ${filter === cat ? "active" : ""}`}
+            onClick={() => setFilter(cat)}
+            type="button"
+          >
+            {cat === "All" ? "All" : cat === "Web" ? "Web System" : "Mobile App"}
+          </button>
+        ))}
+      </div>
       <div className="projects-list">
-        {projects.map((project) => (
+        {filtered.map((project) => (
           <article className={`project-card ${project.color}`} key={project.title}>
-            <div className="project-art" aria-hidden="true"><span className="project-art-label">{project.number}</span><span className="project-art-shape" /></div>
+            <div className="project-art" aria-hidden="true">
+              {(project as { image?: string }).image ? (
+                <img className="project-image" src={(project as { image: string }).image} alt={project.title} loading="lazy" />
+              ) : (
+                <span className="project-art-shape" />
+              )}
+            </div>
             <div className="project-content">
               <div className="project-meta"><span>{project.type}</span><span>{project.number}</span></div>
               <h3>{project.title}</h3>
               <p>{project.description}</p>
               <div className="project-footer">
                 <div className="stack-list">{project.stack.map((item) => <span key={item}>{item}</span>)}</div>
-                <a className="project-link" href={`https://github.com/richiepaulaquino/${project.title.toLowerCase().replaceAll(" ", "-")}`} target="_blank" rel="noreferrer" aria-label={`View ${project.title} on GitHub`}>
-                  <Github size={16} /> View code
-                </a>
+                {(project as { private?: boolean }).private ? (
+                  <span className="project-link private" aria-label={`${project.title} is private`} title="Private / confidential — not public">
+                    <Lock size={14} /> Private
+                  </span>
+                ) : (
+                  <a className="project-link" href={`https://github.com/richiepaulaquino/${project.title.toLowerCase().replaceAll(" ", "-")}`} target="_blank" rel="noreferrer" aria-label={`View ${project.title} on GitHub`}>
+                    <Github size={16} /> View code
+                  </a>
+                )}
               </div>
             </div>
           </article>
