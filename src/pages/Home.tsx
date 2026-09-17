@@ -21,6 +21,7 @@ import {
   Menu,
   Moon,
   MonitorSmartphone,
+  Loader2,
   Send,
   Sparkles,
   Sun,
@@ -601,10 +602,53 @@ function ProjectsSection() {
 }
 
 function ContactSection() {
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const submitForm = (event: FormEvent<HTMLFormElement>) => {
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const submitForm = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitted(true);
+    setSubmitting(true);
+    setErrorMessage(null);
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    const accessKey = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY;
+
+    if (!accessKey) {
+      setErrorMessage(
+        "Please add your VITE_WEB3FORMS_ACCESS_KEY in your .env file or Vercel Environment Variables to receive messages."
+      );
+      setSubmitting(false);
+      return;
+    }
+
+    formData.append("access_key", accessKey);
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSubmitted(true);
+        form.reset();
+      } else {
+        setErrorMessage(
+          data.message || "Failed to send message. Please check your Web3Forms access key."
+        );
+      }
+    } catch {
+      setErrorMessage(
+        "Network error. Please check your connection and try again."
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -623,19 +667,18 @@ function ContactSection() {
             conversations about the web.
           </p>
           <p className="muted-copy">
-            The form is front-end only for now. For a direct hello, use one of
-            the links below.
+            Send a message directly to my inbox using the form, or reach out using the links below.
           </p>
           <div className="contact-links">
-            <a href="mailto:hello@richiepaulaquino.dev">
-              <Mail size={17} /> hello@richiepaulaquino.dev{" "}
+            <a href="mailto:richiepaul.aquino@gmail.com">
+              <Mail size={17} /> richiepaul.aquino@gmail.com{" "}
               <ArrowUpRight size={15} />
             </a>
-            <a href="https://www.linkedin.com" target="_blank" rel="noreferrer">
+            <a href="https://www.linkedin.com/in/richie-paul-aquiño-2bb196265" target="_blank" rel="noreferrer">
               <Linkedin size={17} /> LinkedIn <ArrowUpRight size={15} />
             </a>
             <a
-              href="https://github.com/richiepaulaquino"
+              href="https://github.com/paullooll"
               target="_blank"
               rel="noreferrer"
             >
@@ -668,10 +711,14 @@ function ContactSection() {
               required
             />
           </label>
-          <button className="button button-primary" type="submit">
-            {submitted ? (
+          <button className="button button-primary" type="submit" disabled={submitting}>
+            {submitting ? (
               <>
-                Message noted <Check size={17} />
+                Sending... <Loader2 className="animate-spin" size={16} />
+              </>
+            ) : submitted ? (
+              <>
+                Message sent! <Check size={17} />
               </>
             ) : (
               <>
@@ -681,8 +728,12 @@ function ContactSection() {
           </button>
           {submitted && (
             <p className="form-success" role="status">
-              Thanks — this demo form is ready to connect to a backend when you
-              are.
+              Thank you! Your message has been sent directly to my inbox.
+            </p>
+          )}
+          {errorMessage && (
+            <p className="form-error" role="alert" style={{ color: "#dc2626", fontSize: "12px", marginTop: "8px" }}>
+              {errorMessage}
             </p>
           )}
         </form>
