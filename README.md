@@ -1,110 +1,115 @@
-# Richie Paul Aquiño — Developer Portfolio
+# Richie Paul Aquiño — Portfolio ("Signal")
 
-Minimalist static portfolio for an early-career software & web developer. Single-page app with animated section switching, light/dark theme, and fully responsive layout.
+A single-page portfolio with a minimal "mission control" look: monochrome, lots of white space, rounded cards, and one mint accent used only for live/active things. Dark by default, with a light/dark toggle. **Haunt**, an original pixel ghost, answers visitors' questions in a small chat.
 
-## Features
-- **Sections:** Home, About, Experience, Skills, Projects, Contact
-- **Animations:** GSAP page transitions + hover lifts
-- **Theme:** Light/Dark via `ThemeContext` + localStorage
-- **Responsive:** Sidebar on desktop, slide-in drawer on mobile
-- **Static-only:** No backend — `vite build` outputs to `dist/`
+- **Sections:** Home (hero + status chips) · Projects (filters + case studies) · Skills · Experience · About (+ Now / Learning) · Contact
+- **Extras:** Haunt chat (offline, answers only from `content.ts`; can be wired to an AI endpoint), a hidden playable world (easter egg)
 
-## Tech Stack
-- **Framework:** React 19, TypeScript 5.6, Vite 7
-- **Styling:** Tailwind CSS 4 + `@tailwindcss/vite`, custom CSS in `src/index.css`
-- **Icons:** lucide-react
-- **Animations:** GSAP 3, framer-motion (installed)
-- **UI primitives:** Radix UI, shadcn/ui (`src/components/ui`)
-- **Routing:** Local state `activeSection` (no router) — `wouter` kept for optional 404
+## Run it
 
-## Folder Structure
-```
-/
-├── public/
-│   ├── light.png        # hero photo (313×234 box, object-fit:cover)
-│   └── .gitkeep
-├── src/
-│   ├── components/
-│   │   ├── ui/          # shadcn components (button, card, tooltip…)
-│   │   └── ErrorBoundary.tsx
-│   ├── contexts/ThemeContext.tsx
-│   ├── hooks/useMobile.tsx, usePersistFn.ts, useComposition.ts
-│   ├── lib/utils.ts
-│   ├── pages/Home.tsx   # all sections (HomeSection, AboutSection…)
-│   ├── App.tsx
-│   ├── main.tsx
-│   └── index.css        # theme vars, layout, responsive rules
-├── index.html
-├── vite.config.ts       # alias @ → ./src
-├── tsconfig.json
-├── components.json
-└── package.json
-```
-
-## Getting Started
-**Prerequisites:** Node.js 18+
+Requires Node.js 20.19+ (Vite 7) and pnpm.
 
 ```bash
-# install
 pnpm install
-# or npm install
-
-# dev (http://localhost:3000)
-pnpm dev
-
-# type check
-pnpm check
-
-# build
-pnpm build          # → dist/
-pnpm preview        # serve dist/
-
-# format
-pnpm format
+pnpm dev        # http://localhost:3000 (shows [TODO] markers)
+pnpm test       # unit tests (Vitest)
+pnpm check      # TypeScript
+pnpm build      # production build + prerender → dist/
+pnpm preview    # serve dist/ locally
+pnpm assets     # regenerate WebP images and the OG image
 ```
 
-> Windows PowerShell may require: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
+> Windows PowerShell may need: `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass`
 
-## Customization
+## Editing content
 
-**Hero photo:** `src/pages/Home.tsx:129` → `<img src="/light.png">` loads from `public/light.png`. Recommended ≥620×470px (4:3), JPG/PNG. Replace file or change `src` to URL. Box is ~313×234px (`note-illustration`, `object-fit:cover`).
+**Everything you'd want to change lives in [`src/content.ts`](src/content.ts):** hero text and status chips, projects and case studies, skills, timeline, Now/Learning, hobbies, links, and Haunt's greeting and suggested questions.
 
-**Name/Roles:** `src/pages/Home.tsx:436` sidebar-brand + `navItems` array.
+### Hide until filled
 
-**Experience/Education:** `ExperienceSection` in `src/pages/Home.tsx:199`. Education card uses `white-space: nowrap` for `"MIT / WVSU · Currently enrolled"` with span fallback on mobile.
+Any value set to `PLACEHOLDER` (`"[TODO]"`) is:
 
-**Skills:** `skillGroups` in `src/pages/Home.tsx:42`:
-```ts
-Languages, Frameworks & Platforms: HTML, CSS, JS, TS, PHP, Python, Dart, Flutter, React, TailwindCSS, NodeJS
-Databases & Tools: MySQL, Firebase, VS Code, Antigravity, OpenCode, Manus, Git and Github
-Currently Learning: Vite, NextJS, NestJS, Express, Docker, MongoDB, PostgreSQL, Google Colab
+- **shown in `pnpm dev`** with a dashed orange `[TODO]` marker, so you can see what's missing;
+- **hidden on the live site** (`pnpm build`);
+- **listed as a warning** at the end of every `pnpm build`.
+
+Don't invent numbers or results: leave `PLACEHOLDER` until you have real ones.
+
+**Resume:** put your PDF in `public/` (e.g. `public/cv.pdf`) and set `cv: "/cv.pdf"` in `content.ts`. The header "Resume" button appears automatically.
+
+### Government / internal projects
+
+Projects with `private: true` never show real screenshots, URLs, names or data. Their cards and case studies use a generic, data-free mock preview (`src/components/MockPreview.tsx`). Keep real screenshots of internal systems in `private-assets/` (git-ignored, never deployed), not in `public/`.
+
+## Haunt chat
+
+By default Haunt answers **offline** with a small intent matcher over `content.ts` (`src/lib/haunt-brain.ts`). It never invents facts, skips anything still `[TODO]`, and says "I don't know" otherwise.
+
+To make it a real AI chatbot, deploy your own endpoint (for example a serverless function that calls an LLM with `content.ts` as context) and set `VITE_HAUNT_API_URL`. The page POSTs `{ question, history }` and expects `{ text, links? }`. On any error it falls back to the offline answers. Keep API keys on the server.
+
+## Environment variables
+
+Copy `.env.example` to `.env` for local use, or set these in your host's dashboard:
+
+| Variable                    | What it does                                                                                               |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `VITE_WEB3FORMS_ACCESS_KEY` | Contact form delivery ([web3forms.com](https://web3forms.com), free).                                      |
+| `VITE_SITE_URL`             | Your live URL, e.g. `https://richie.dev`. Enables canonical URL, `sitemap.xml`, absolute Open Graph image. |
+| `VITE_ANALYTICS_ENDPOINT`   | Umami analytics host (privacy-friendly, optional).                                                         |
+| `VITE_ANALYTICS_WEBSITE_ID` | Umami website ID. Analytics loads only when both are set.                                                  |
+| `VITE_HAUNT_API_URL`        | Optional AI endpoint for Haunt (see above).                                                                |
+
+Tracked analytics events: `cv-download`, `message-sent`.
+
+## Deploy
+
+Build command `pnpm build`, output directory `dist`. SPA rewrites for the custom 404 are already included (`vercel.json`, `public/_redirects`).
+
+**Vercel:** import the repo at vercel.com/new → framework "Vite" (auto-detected) → add the env vars above → Deploy.
+
+**Netlify:** "Add new site" → import the repo → build `pnpm build`, publish `dist` → add the env vars → Deploy.
+
+After the first deploy, set `VITE_SITE_URL` to the real URL and redeploy so the sitemap and social preview use it.
+
+## How it's built
+
+- **Stack:** React 19, TypeScript, Vite 7, wouter, sonner, lucide-react. Plain CSS with design tokens (`src/styles/tokens.css`); no animation library.
+- **Prerendered:** `scripts/prerender.mjs` renders the page to static HTML at build time; React hydrates it.
+- **Lazy by default:** Haunt's chat loads after the page is idle; the hidden world only when someone finds it.
+- **Motion:** one small IntersectionObserver fade-in (`src/motion/useReveal.ts`), hover lifts, and dialog/chat entrances. Nothing autoplays; everything respects `prefers-reduced-motion`.
+- **Accessibility:** semantic landmarks, skip link, visible focus, native `<dialog>` for case studies (focus trap, Esc, focus return), labelled filters (`aria-pressed`), live regions for filter results and chat replies, AA contrast checked by `src/lib/contrast.test.ts`.
+- **SEO:** `scripts/vite-portfolio-plugin.ts` injects meta, Open Graph/Twitter tags and Person JSON-LD, and emits `robots.txt` / `sitemap.xml`.
+- **Fonts:** IBM Plex Sans (body) and IBM Plex Mono (labels), self-hosted and preloaded. The pixel fonts only load inside the hidden world.
+
+```
+src/
+  content.ts            ← all content
+  sections/             ← Hero, Projects, Skills, Experience, About, Contact + sections.css
+  components/           ← header, section frame, project card/media, case-study dialog, mock preview, Gate
+  components/haunt/     ← Haunt's sprite and chat
+  game/                 ← the hidden world (lazy-loaded)
+  lib/                  ← pure logic, unit-tested (projects filter, Haunt brain/client, placeholders…)
+  motion/               ← reveal + reduced-motion helpers
+  styles/               ← tokens, fonts, base, components, game
+scripts/                ← asset pipeline, prerender, SEO plugin
 ```
 
-**About hobbies:** `AboutSection:188` grid of 4 cards — Currently listening / Gaming (`Gamepad2`) / Physical activities (`Dumbbell`) / Unwind & travel (`Plane`). Edit placeholder `<p>` text.
+## Content checklist
 
-**Projects:** `projects` array in `src/pages/Home.tsx:60` — title, description, stack, color (`apricot/sage/lilac`).
+- [ ] Resume PDF in `public/` + `cv` in `content.ts`
+- [ ] Production domain → `VITE_SITE_URL`
+- [ ] Per project: problem, result, extra screenshots or demo video, live links (`projects[].caseStudy`, `live`)
+- [ ] Now / Learning: a short note per topic and an "updated" date (`now`)
+- [ ] Spotify playlist link (`hobbies[0].link`)
+- [ ] Web3Forms key and (optional) Umami env vars in the host
 
-**Socials:** `sidebar-socials` in `src/pages/Home.tsx:446` — order Facebook → Instagram → GitHub → LinkedIn. Update `href`s to your profiles.
+<details>
+<summary>Easter egg (spoilers)</summary>
 
-**Contact:** `ContactSection` — form is frontend-only; wire to backend or keep mailto/links.
+Type the Konami code (↑ ↑ ↓ ↓ ← → ← → B A) or type `haunt` anywhere outside a form field. Walk Haunt into a door to jump to that section; collect all five soul orbs for an achievement. Esc exits. Asking Haunt about "secrets" in the chat gives a hint.
 
-**Theme:** `ThemeProvider defaultTheme="light" switchable` in `src/App.tsx:9`. Colors in `src/index.css:20` `:root` / `.dark`.
-
-## Deployment
-Static output `dist/` deployable to Vercel, Netlify, Cloudflare Pages, GitHub Pages:
-```bash
-pnpm build
-# upload dist/ or connect repo with build command `pnpm build` and output `dist`
-```
-
-## Scripts
-| Script | Command |
-|--------|---------|
-| `dev` | `vite --host` |
-| `build` | `vite build` |
-| `preview` | `vite preview --host` |
-| `check` | `tsc --noEmit` |
-| `format` | `prettier --write .` |
+</details>
 
 ## License
-MIT
+
+MIT. Fonts: SIL Open Font License. Haunt is an original character.

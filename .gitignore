@@ -109,3 +109,6 @@ temp/
 .webdev/
 
 .project-config.json
+
+# Real screenshots of internal government systems: never deploy.
+private-assets/

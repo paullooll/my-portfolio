@@ -1,0 +1,217 @@
+/* Haunt chat: corner launcher + non-modal panel. */
+.haunt-chat {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 70;
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.chat-launcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: border-color 0.15s ease;
+}
+.chat-launcher:hover {
+  border-color: var(--accent);
+}
+.chat-launcher .haunt {
+  filter: none;
+}
+
+.chat-panel {
+  width: min(380px, calc(100vw - 32px));
+  height: min(560px, calc(100dvh - 120px));
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .chat-panel {
+    animation: chat-in 0.2s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transform-origin: bottom right;
+  }
+}
+@keyframes chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+.chat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 12px 12px 14px;
+  border-bottom: 1px solid var(--line);
+}
+.chat-head > div {
+  flex: 1;
+  min-width: 0;
+}
+.chat-head h2 {
+  font-size: 1rem;
+}
+.chat-head .mono {
+  font-size: 0.7rem;
+}
+.chat-head .icon-button {
+  width: 34px;
+  height: 34px;
+}
+
+.chat-log {
+  list-style: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.msg {
+  max-width: 88%;
+  padding: 9px 12px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: grid;
+  gap: 6px;
+  overflow-wrap: anywhere;
+}
+.msg-haunt {
+  align-self: flex-start;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-bottom-left-radius: 4px;
+}
+.msg-user {
+  align-self: flex-end;
+  background: var(--accent);
+  color: var(--on-accent);
+  border-bottom-right-radius: 4px;
+}
+.msg-links {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.msg-links a {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+.msg-links a:hover {
+  border-color: var(--accent);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 4px;
+  padding: 4px 0;
+}
+.dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-muted);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .dots i {
+    animation: dot 1s ease-in-out infinite;
+  }
+  .dots i:nth-child(2) {
+    animation-delay: 0.15s;
+  }
+  .dots i:nth-child(3) {
+    animation-delay: 0.3s;
+  }
+}
+@keyframes dot {
+  50% {
+    opacity: 0.3;
+    transform: translateY(-2px);
+  }
+}
+
+.chat-suggestions {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 14px 12px;
+}
+.chat-suggestions .chip {
+  cursor: pointer;
+  text-align: left;
+}
+.chat-suggestions .chip:hover {
+  color: var(--ink);
+  border-color: var(--ink-muted);
+}
+
+.chat-form {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid var(--line);
+}
+.chat-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 0.95rem;
+}
+.chat-form input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.chat-send {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.chat-send[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Phones: the panel takes the full width above the launcher. */
+@media (max-width: 480px) {
+  .chat-launcher-label {
+    display: none;
+  }
+  .chat-launcher {
+    padding: 6px;
+  }
+}

@@ -1,0 +1,68 @@
+import { ArrowUpRight, Github, Lock } from "lucide-react";
+import type { Project } from "@/content";
+import { ProjectMedia } from "./ProjectMedia";
+
+/**
+ * One project card. The title is a real <button> (keyboard + screen reader),
+ * and the whole card is clickable through a stretched pseudo-element.
+ */
+export function ProjectCard({
+  project: p,
+  onOpen,
+}: {
+  project: Project;
+  onOpen: (id: string, el: HTMLElement) => void;
+}) {
+  return (
+    <li className="project card" data-reveal>
+      <div className="project-media">
+        <ProjectMedia project={p} />
+      </div>
+      <div className="project-body">
+        <p className="mono muted">
+          {p.number} · {p.type}
+        </p>
+        <h3>
+          <button
+            type="button"
+            className="project-open"
+            data-project={p.id}
+            onClick={e => onOpen(p.id, e.currentTarget)}
+          >
+            {p.title}
+          </button>
+        </h3>
+        <p className="muted project-desc">{p.description}</p>
+        <ul className="chip-list" aria-label="Tags">
+          {p.tags.map(t => (
+            <li key={t} className="chip">
+              {t}
+            </li>
+          ))}
+        </ul>
+        <div className="project-foot">
+          <span className="text-link" aria-hidden="true">
+            Case study <ArrowUpRight size={15} />
+          </span>
+          {p.private ? (
+            <span className="mono muted project-private">
+              <Lock size={13} aria-hidden="true" /> Internal · gov
+            </span>
+          ) : (
+            p.github && (
+              <a
+                className="project-gh mono muted"
+                href={p.github}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Github size={14} aria-hidden="true" /> Code
+                <span className="sr-only"> for {p.title} (opens GitHub)</span>
+              </a>
+            )
+          )}
+        </div>
+      </div>
+    </li>
+  );
+}
