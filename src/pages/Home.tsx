@@ -22,8 +22,6 @@ const HauntChat = lazy(() =>
   import("@/components/haunt/HauntChat").then(m => ({ default: m.HauntChat }))
 );
 const HauntWorld = lazy(() => import("@/game/HauntWorld"));
-// Decorative background canvas: after load, never in the prerendered HTML.
-const Constellation = lazy(() => import("@/components/fx/Constellation"));
 // Command palette + mini terminal: fetched the first time it is opened.
 const CommandPalette = lazy(() => import("@/components/fx/CommandPalette"));
 
@@ -78,11 +76,6 @@ export default function Home() {
   return (
     <>
       <div className="fx-grid" aria-hidden="true" />
-      {extras && (
-        <Suspense fallback={null}>
-          <Constellation />
-        </Suspense>
-      )}
       <a className="skip-link" href="#main">
         Skip to content
       </a>

@@ -1,8 +1,8 @@
-/* Decorative effects layer: background grid, constellation canvas, portrait,
+/* Decorative effects layer: background grid, portrait,
    command palette, scroll progress. Every animation here has a still
    final state under prefers-reduced-motion. */
 
-/* ---------- Background: faint grid (CSS, prerendered) + canvas ---------- */
+/* ---------- Background: faint grid (CSS, prerendered) ---------- */
 .fx-grid {
   position: fixed;
   inset: 0;
@@ -15,25 +15,6 @@
   /* Fade the grid out toward the bottom so lower sections stay calm. */
   -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 85%);
   mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 85%);
-}
-.fx-constellation {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  max-width: none;
-  z-index: -1;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.2s ease;
-}
-.fx-constellation.is-ready {
-  opacity: var(--fx-canvas-opacity);
-}
-@media (prefers-reduced-motion: reduce) {
-  .fx-constellation {
-    transition: none;
-  }
 }
 
 /* ---------- Hero layout with portrait ---------- */
@@ -411,7 +392,7 @@
   }
 }
 
-/* ---------- Project cards: tilt, glare, hover preview ---------- */
+/* ---------- Project cards: tilt, hover preview ---------- */
 .project.is-tiltable {
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition:
@@ -425,22 +406,6 @@
   box-shadow:
     var(--shadow),
     0 18px 40px -24px color-mix(in srgb, var(--accent) 45%, transparent);
-}
-.project-glare {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0;
-  background: radial-gradient(
-    circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in srgb, var(--accent) 14%, transparent),
-    transparent 55%
-  );
-  transition: opacity 0.25s ease;
-}
-.project.is-tiltable:hover .project-glare {
-  opacity: 1;
 }
 .project-media {
   position: relative;
@@ -501,7 +466,6 @@
   z-index: 60;
   height: 2px;
   background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 50%, var(--ink)));
-  box-shadow: 0 0 8px var(--accent);
   transform-origin: 0 50%;
   transform: scaleX(var(--progress, 0));
   pointer-events: none;
@@ -558,13 +522,9 @@
     animation: none;
   }
 }
-/* Very narrow phones: icon-only palette button so the brand stays on one line. */
-@media (max-width: 379px) {
-  .palette-trigger-label {
-    display: none;
-  }
+/* Touch screens and phones have no Ctrl+K: hide the button (menu + nav cover it). */
+@media (hover: none), (max-width: 767px) {
   .palette-trigger {
-    width: 40px;
-    padding: 0;
+    display: none;
   }
 }

@@ -25,7 +25,6 @@ export function ProjectCard({
           View case study <ArrowUpRight size={14} />
         </span>
       </div>
-      <span className="project-glare" aria-hidden="true" />
       <div className="project-body">
         <p className="mono muted">
           {p.number} · {p.type}

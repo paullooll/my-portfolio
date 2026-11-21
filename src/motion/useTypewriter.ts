@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { prefersReducedMotion } from "./reducedMotion";
 
 /**
- * Types each phrase, holds, deletes, moves to the next. Starts with the first
+ * Types each phrase, holds, deletes, moves to the next, once, ending back on
+ * the first phrase (endless cycling pulls the eye from the content). Starts with the first
  * phrase fully shown (so the prerendered HTML and reduced motion read
  * correctly) and only begins cycling after a short delay.
  */
@@ -30,6 +31,8 @@ export function useTypewriter(
       }
       const current = phrases[i];
       setText(current.slice(0, Math.max(0, shown)));
+      // One pass only: stop once we are back on the first phrase.
+      if (!deleting && i === 0 && shown >= current.length) return;
       if (!deleting && shown >= current.length) {
         deleting = true;
         timer = window.setTimeout(tick, hold);

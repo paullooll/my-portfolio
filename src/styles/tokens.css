@@ -40,7 +40,6 @@
   --gutter: clamp(16px, 4vw, 32px);
   /* Effects layer (src/styles/fx.css). */
   --fx-grid-line: rgba(10, 10, 11, 0.045);
-  --fx-canvas-opacity: 0.45;
   color-scheme: light;
 }
 
@@ -66,6 +65,5 @@
   --haunt-mouth: #0a0a0b;
   --haunt-teeth: #ffffff;
   --fx-grid-line: rgba(255, 255, 255, 0.035);
-  --fx-canvas-opacity: 0.6;
   color-scheme: dark;
 }
