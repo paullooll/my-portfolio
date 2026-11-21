@@ -127,7 +127,7 @@ const content: SiteContent = {
     "I build web systems that turn manual government processes into tools people can rely on.",
   status: [
     "Open to work",
-    "Junior Fullstack Dev · Iloilo City Government",
+    "Iloilo City Government",
     "MIT student · WVSU",
     "Iloilo City, PH",
   ],

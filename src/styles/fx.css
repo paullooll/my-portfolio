@@ -26,13 +26,16 @@
   gap: 20px;
   justify-items: start;
 }
+/* Copy first on every screen: on phones the portrait follows the buttons. */
+.hero-copy {
+  grid-row: 1;
+}
 @media (min-width: 900px) {
   .hero-inner {
     grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
     gap: 40px;
   }
   .hero-copy {
-    grid-row: 1;
     grid-column: 1;
   }
 }
