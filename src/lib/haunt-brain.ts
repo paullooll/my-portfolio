@@ -428,7 +428,6 @@ export function answer(question: string, c: SiteContent): HauntReply {
     return {
       topic: "hobbies",
       text: c.hobbies
-        .filter(h => h.title !== "Currently listening")
         .map(h => `${h.title}: ${h.text}`)
         .join("\n"),
       links: [{ label: "About", href: "#about" }],

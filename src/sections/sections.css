@@ -339,11 +339,6 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
-@media (min-width: 1000px) {
-  .hobby-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
 .hobby {
   display: grid;
   gap: 8px;
@@ -352,6 +347,20 @@
 }
 .hobby h4 {
   font-size: var(--text-base);
+}
+.now-playing {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.now-playing img {
+  flex: none;
+  border-radius: 6px;
+}
+.now-playing-label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
 /* ---------- Contact ---------- */

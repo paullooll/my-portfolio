@@ -1,13 +1,12 @@
-import { ArrowUpRight, Dumbbell, Gamepad2, Heart, Plane } from "lucide-react";
+import { Gamepad2, Music } from "lucide-react";
 import content, { type Hobby } from "@/content";
 import { Gate } from "@/components/Gate";
+import { NowPlaying } from "@/components/NowPlaying";
 import { SectionFrame } from "@/components/SectionFrame";
 
-const icons: Record<Hobby["icon"], typeof Heart> = {
-  heart: Heart,
+const icons: Record<Hobby["icon"], typeof Music> = {
+  music: Music,
   gamepad: Gamepad2,
-  dumbbell: Dumbbell,
-  plane: Plane,
 };
 
 /** About: photo + story, the Now/Learning card, and a few things outside work. */
@@ -73,36 +72,15 @@ export function About() {
       <ul className="hobby-grid">
         {hobbies.map(h => {
           const Icon = icons[h.icon];
-          const inner = (
-            <>
+          return (
+            <li key={h.title} className="card card-pad hobby" data-reveal>
               <Icon size={18} className="accent" aria-hidden="true" />
               <h4>{h.title}</h4>
-              <p className="muted">{h.text}</p>
-              {h.link !== undefined && (
-                <a
-                  className="text-link"
-                  href={h.link}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  {h.linkLabel} <ArrowUpRight size={14} aria-hidden="true" />
-                </a>
+              {h.live === "spotify" ? (
+                <NowPlaying fallback={h.text} />
+              ) : (
+                <p className="muted">{h.text}</p>
               )}
-            </>
-          );
-          // A card that only exists to hold a link waits for that link.
-          return h.link !== undefined ? (
-            <Gate
-              key={h.title}
-              value={h.link}
-              as="li"
-              className="card card-pad hobby"
-            >
-              {inner}
-            </Gate>
-          ) : (
-            <li key={h.title} className="card card-pad hobby" data-reveal>
-              {inner}
             </li>
           );
         })}
