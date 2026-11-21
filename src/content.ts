@@ -77,11 +77,11 @@ export interface NowItem {
 }
 
 export interface Hobby {
-  icon: "heart" | "gamepad" | "dumbbell" | "plane";
+  icon: "music" | "gamepad";
   title: string;
   text: string;
-  link?: Maybe<string>;
-  linkLabel?: string;
+  /** Show the live Spotify track (api/now-playing.ts); `text` is the fallback. */
+  live?: "spotify";
 }
 
 export interface Social {
@@ -131,8 +131,8 @@ const content: SiteContent = {
     "MIT student · WVSU",
     "Iloilo City, PH",
   ],
-  // Put your CV in public/ (e.g. public/cv.pdf) and set this to "/cv.pdf".
-  cv: PLACEHOLDER,
+  // Public file: public/cv.pdf (contains phone + email).
+  cv: "/cv.pdf",
   email: "richiepaul.aquino@gmail.com",
 
   sections: [
@@ -203,26 +203,15 @@ const content: SiteContent = {
 
   hobbies: [
     {
-      icon: "heart",
-      title: "Currently listening",
-      text: "Add a Spotify embed now, or connect the API later to show what's playing in real time.",
-      link: PLACEHOLDER,
-      linkLabel: "Open playlist",
+      icon: "music",
+      title: "Music",
+      text: "What I'm listening to, live from Spotify.",
+      live: "spotify",
     },
     {
       icon: "gamepad",
       title: "Gaming",
       text: "PC and mobile, from competitive titles like Valorant, Wild Rift, and Teamfight Tactics to sports games and MMORPGs.",
-    },
-    {
-      icon: "dumbbell",
-      title: "Staying active",
-      text: "Jogging and basketball keep me fit and give me a break from work and daily routines.",
-    },
-    {
-      icon: "plane",
-      title: "Exploring places",
-      text: "Visiting new places to relax, unwind, and do things at my own pace.",
     },
   ],
 
@@ -235,7 +224,7 @@ const content: SiteContent = {
       tags: ["Web", "Security", "Work"],
       featured: true,
       description:
-        "A web application for the City Government of Iloilo for requesting supplies in the warehouse. I developed the RBAC, JWT authentication, and the database structure, and contributed to several frontend modules.",
+        "Lets Iloilo City Government offices request supplies from the city warehouse online. I built the role-based access control, JWT authentication, and database design, and contributed frontend modules.",
       stack: [
         "React",
         "TypeScript",
@@ -266,7 +255,7 @@ const content: SiteContent = {
       tags: ["Web", "Work"],
       featured: true,
       description:
-        "A web-based budget tracker that lets the City Budget office overview the budgets of all departments, with add, edit, and delete for Program, Project and Activity (PPA) entries.",
+        "Gives the City Budget Office one view of every department's budget, with add, edit, and delete for Program, Project and Activity (PPA) entries.",
       stack: ["React", "TypeScript", "Express", "TailwindCSS", "MySQL"],
       private: true,
       caseStudy: {
@@ -290,7 +279,7 @@ const content: SiteContent = {
       tags: ["Data", "School"],
       featured: true,
       description:
-        "A mobile app for learning and practicing guitar chords. I trained the model and configured the pitch detection package.",
+        "My thesis: a Flutter app for learning guitar chords, with on-device chord detection from the camera and pitch detection from the mic. I trained the model and set up the pitch detection.",
       stack: ["Flutter", "Dart", "Google Colab", "Roboflow"],
       image: "/projects/chordefine.png",
       imageSize: { width: 1920, height: 1080 },
@@ -312,7 +301,7 @@ const content: SiteContent = {
       title: "AmbatuHelp",
       tags: ["Data", "School"],
       description:
-        "A chatbot mobile application that uses the ChatGPT API. I created the UI/UX of the app.",
+        "A Flutter chatbot app powered by the ChatGPT API, with onboarding, profiles, and FAQ screens. I designed the app's UI/UX.",
       stack: ["Flutter", "Dart", "Tensorflow", "ChatGPT API"],
       image: "/projects/ambatuhelp.png",
       imageSize: { width: 1920, height: 1080 },

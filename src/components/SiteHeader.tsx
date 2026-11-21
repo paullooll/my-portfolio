@@ -51,7 +51,7 @@ function ResumeButton({
       <a
         className={`button button-sm button-primary ${className}`}
         href={content.cv}
-        download
+        download="Richie-Paul-Aquino-CV.pdf"
         onClick={onClick}
       >
         <Download size={15} aria-hidden="true" /> Resume

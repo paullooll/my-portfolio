@@ -112,3 +112,4 @@ temp/
 
 # Real screenshots of internal government systems: never deploy.
 private-assets/
+assets-src/solid/

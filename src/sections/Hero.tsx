@@ -25,7 +25,7 @@ export function Hero() {
         <p className="hero-lede">{content.valueStatement}</p>
         <div className="hero-actions">
           <a className="button button-primary" href="#projects">
-            View Projects <ArrowRight size={16} aria-hidden="true" />
+            View projects <ArrowRight size={16} aria-hidden="true" />
           </a>
           <a className="button" href="#contact">
             Contact
