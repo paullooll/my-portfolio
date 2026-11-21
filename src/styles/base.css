@@ -20,7 +20,7 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-sans);
-  font-size: 1rem;
+  font-size: var(--text-base);
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
@@ -81,13 +81,13 @@ ol {
 /* Small monospace labels: tags, dates, eyebrows. */
 .mono {
   font-family: var(--font-mono);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.02em;
   line-height: 1.4;
 }
 .eyebrow {
   font-family: var(--font-mono);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-muted);
@@ -143,7 +143,7 @@ ol {
   background: var(--warn);
   color: var(--bg);
   font-family: var(--font-mono);
-  font-size: 0.65rem;
+  font-size: var(--text-xs);
   line-height: 1;
   padding: 3px 6px;
   border-radius: 4px;

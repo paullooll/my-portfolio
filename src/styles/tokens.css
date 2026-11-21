@@ -33,6 +33,17 @@
   --font-display: "Press Start 2P", "Pixel Fallback", ui-monospace, monospace;
   --font-hud: "VT323", ui-monospace, monospace;
 
+  /* Type scale: every font-size uses one of these. 13px is the floor for
+     legibility (chips, tags, labels). */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.5rem;
+  --text-lede: clamp(1.1rem, 2.4vw, 1.35rem);
+  --text-h2: clamp(1.6rem, 3.2vw, 2.1rem);
+  --text-display: clamp(2.4rem, 8vw, 4.5rem);
+
   --radius: 16px;
   --radius-sm: 10px;
   --header-h: 64px;
