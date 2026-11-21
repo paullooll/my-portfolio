@@ -158,6 +158,7 @@
 .project-gh {
   position: relative;
   z-index: 1;
+  min-height: 24px; /* WCAG 2.5.8 target size */
 }
 .project-gh:hover {
   color: var(--ink);

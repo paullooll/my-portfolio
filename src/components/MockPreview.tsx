@@ -7,7 +7,7 @@ import { Lock } from "lucide-react";
  */
 export function MockPreview({ title }: { title: string }) {
   return (
-    <figure className="mock" role="img" aria-label={`${title}: mock preview. The real system is internal, so no screenshots are shown.`}>
+    <figure className="mock" role="img" aria-label={`${title}: illustration. The real system is internal, so screenshots are private.`}>
       <svg viewBox="0 0 320 180" aria-hidden="true" preserveAspectRatio="xMidYMid slice">
         {/* sidebar */}
         <rect x="0" y="0" width="64" height="180" fill="var(--surface)" />
@@ -37,7 +37,7 @@ export function MockPreview({ title }: { title: string }) {
         ))}
       </svg>
       <figcaption className="mock-label mono">
-        <Lock size={12} aria-hidden="true" /> Mock preview
+        <Lock size={12} aria-hidden="true" /> Screenshots private
       </figcaption>
     </figure>
   );

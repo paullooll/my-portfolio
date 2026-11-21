@@ -361,7 +361,6 @@
 .mock > svg {
   width: 100%;
   height: 100%;
-  filter: blur(1.2px);
 }
 .mock-label {
   position: absolute;
