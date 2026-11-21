@@ -1,0 +1,485 @@
+<!doctype html>
+<!-- ChorDefine demo video renderer (source of public/projects/chordefine-demo.webm).
+     Re-render: copy logo.png + Poppins-*.ttf from the ChorDefine repo here, run
+     `SHARP=<portfolio>/node_modules/sharp node cut.cjs` (makes phones/), `node server.cjs`,
+     open http://localhost:4390 and run `await render()` in the console; output lands in out/. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>ChorDefine promo renderer</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { width: 100vw; height: auto; display: block; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.3/build/webm-muxer.js"></script>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080, FPS = 30, DURATION = 34;
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+
+// ---------- palette (ChorDefine's own brand) ----------
+const BG = "#141517", ORANGE = "#F07A1E", GREEN = "#14C77A", AMBER = "#FFB200",
+  INK = "#F5F3EF", MUTED = "#9A9CA3";
+
+// ---------- easing / timing ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outCubic = x => 1 - Math.pow(1 - x, 3);
+const outQuint = x => 1 - Math.pow(1 - x, 5);
+const inOutCubic = x => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const outBack = x => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+
+// ---------- assets ----------
+const img = {};
+const names = ["logo", "main-0", "onboard-1", "onboard-2", "feedback-1", "detect-0", "feedback-0",
+  "fret-2", "fret-3", "tuner-0", "ear-0", "lyrics-1", "learn-0", "library-1", "progress-0"];
+function loadImg(n) {
+  return new Promise((ok, bad) => {
+    const i = new Image();
+    i.onload = () => ok((img[n] = i));
+    i.onerror = bad;
+    i.src = n === "logo" ? "logo.png" : `phones/${n}.png`;
+  });
+}
+async function loadAll() {
+  const fonts = [["Poppins-Medium.ttf", 500], ["Poppins-SemiBold.ttf", 600], ["Poppins-Bold.ttf", 700]];
+  await Promise.all(fonts.map(async ([f, w]) => {
+    const ff = new FontFace("Poppins", `url(${f})`, { weight: String(w) });
+    document.fonts.add(await ff.load());
+  }));
+  await Promise.all(names.map(loadImg));
+}
+
+// deterministic film grain
+const grain = document.createElement("canvas");
+grain.width = grain.height = 256;
+{
+  const g = grain.getContext("2d"), d = g.createImageData(256, 256);
+  let s = 1234567;
+  for (let i = 0; i < d.data.length; i += 4) {
+    s = (s * 1103515245 + 12345) & 0x7fffffff;
+    const v = s & 255;
+    d.data[i] = d.data[i + 1] = d.data[i + 2] = v; d.data[i + 3] = 255;
+  }
+  g.putImageData(d, 0, 0);
+}
+
+// ---------- drawing helpers ----------
+function font(size, weight = 600) { return `${weight} ${size}px Poppins`; }
+
+function background(t) {
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  // two slow drifting glows
+  const glow = (x, y, r, col, a) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, col.replace("A", a)); g.addColorStop(1, col.replace("A", 0));
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  };
+  glow(W * 0.72 + Math.sin(t * 0.35) * 160, H * 0.35 + Math.cos(t * 0.27) * 90, 900, "rgba(240,122,30,A)", 0.16);
+  glow(W * 0.2 + Math.cos(t * 0.22) * 140, H * 0.85, 800, "rgba(255,178,0,A)", 0.06);
+}
+
+function finish(t, frame) {
+  // vignette
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 1.05);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  // timeline bar
+  ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(0, H - 4, W, 4);
+  ctx.fillStyle = ORANGE; ctx.fillRect(0, H - 4, W * (t / DURATION), 4);
+  // fade in / out from black
+  const fade = Math.max(1 - prog(t, 0, 0.5), prog(t, DURATION - 0.7, DURATION));
+  if (fade > 0) { ctx.fillStyle = `rgba(0,0,0,${fade})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// six guitar strings; pluck = time each string was plucked
+function strings(t, y, gap, alpha, drawStart, pluckAt, x0 = 0, x1 = W) {
+  for (let i = 0; i < 6; i++) {
+    const sy = y + (i - 2.5) * gap;
+    const reveal = outCubic(prog(t, drawStart + i * 0.07, drawStart + i * 0.07 + 0.9));
+    if (reveal <= 0) continue;
+    const since = t - (pluckAt + i * 0.045);
+    const amp = since > 0 ? 9 * Math.exp(-since * 2.6) * (1 - i * 0.08) : 0;
+    ctx.save();
+    ctx.globalAlpha = alpha * (0.25 + i * 0.07);
+    ctx.strokeStyle = i < 3 ? "#D9D4CC" : "#C9A66B"; // plain vs wound strings
+    ctx.lineWidth = 1.2 + i * 0.45;
+    ctx.beginPath();
+    const xe = lerp(x0, x1, reveal);
+    for (let x = x0; x <= xe; x += 12) {
+      const k = (x - x0) / (x1 - x0);
+      const yy = sy + amp * Math.sin(Math.PI * k) * Math.sin(since * 55 + i);
+      x === x0 ? ctx.moveTo(x, yy) : ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+// a phone cut-out with shadow + soft orange rim glow
+function phone(name, cx, cy, h, { rot = 0, alpha = 1, glow = 0.35, scale = 1 } = {}) {
+  const im = img[name]; if (!im || alpha <= 0) return;
+  const hh = h * scale, ww = (im.width / im.height) * hh;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.shadowColor = `rgba(240,122,30,${glow})`; ctx.shadowBlur = 70;
+  ctx.drawImage(im, -ww / 2, -hh / 2, ww, hh);
+  ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 30;
+  ctx.drawImage(im, -ww / 2, -hh / 2, ww, hh);
+  ctx.restore();
+  return { w: ww, h: hh };
+}
+
+// words rise in one by one; words = [[text, color?], ...] or a string
+function words(t, start, text, x, y, size, { weight = 700, color = INK, align = "left", stagger = 0.06, alpha = 1, joined = false } = {}) {
+  const list = typeof text === "string" ? text.split(" ").map(w => [w]) : text;
+  ctx.font = font(size, weight);
+  const space = joined ? 0 : ctx.measureText(" ").width;
+  const widths = list.map(([w]) => ctx.measureText(w).width);
+  const total = widths.reduce((a, b) => a + b, 0) + space * (list.length - 1);
+  let xx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+  list.forEach(([w, c], i) => {
+    const p = outQuint(prog(t, start + i * stagger, start + i * stagger + 0.7));
+    if (p > 0) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(xx - 4, y - size * 1.1, widths[i] + 8, size * 1.45); ctx.clip();
+      ctx.globalAlpha = alpha * p;
+      ctx.fillStyle = c || color;
+      ctx.textBaseline = "alphabetic";
+      ctx.fillText(w, xx, y + (1 - p) * size * 0.9);
+      ctx.restore();
+    }
+    xx += widths[i] + space;
+  });
+  return total;
+}
+
+function eyebrow(t, start, text, x, y, { align = "left", alpha = 1 } = {}) {
+  const p = outCubic(prog(t, start, start + 0.6));
+  ctx.save();
+  ctx.globalAlpha = alpha * p;
+  ctx.font = font(22, 600);
+  ctx.letterSpacing = "6px";
+  ctx.fillStyle = ORANGE;
+  ctx.textAlign = align;
+  ctx.fillText(text, x + (align === "left" ? 40 : 0) * (1 - p) + (align === "left" ? 54 : 0), y);
+  if (align === "left") { ctx.fillRect(x, y - 9, 40 * p, 3); }
+  ctx.restore();
+}
+
+function body(t, start, text, x, y, size, maxW, { align = "left", alpha = 1, color = MUTED } = {}) {
+  ctx.font = font(size, 500);
+  const lines = [];
+  let line = "";
+  for (const w of text.split(" ")) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  }
+  lines.push(line);
+  lines.forEach((l, i) => {
+    const p = outCubic(prog(t, start + i * 0.08, start + i * 0.08 + 0.7));
+    ctx.save();
+    ctx.globalAlpha = alpha * p;
+    ctx.fillStyle = color; ctx.font = font(size, 500); ctx.textAlign = align;
+    ctx.fillText(l, x, y + i * size * 1.5 + (1 - p) * 18);
+    ctx.restore();
+  });
+}
+
+function chip(t, start, text, x, y, { color = ORANGE, fg = "#fff", size = 26, icon = "", align = "center", alpha = 1 } = {}) {
+  const p = outBack(prog(t, start, start + 0.55));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.font = font(size, 600);
+  const label = icon ? icon + "  " + text : text;
+  const w = ctx.measureText(label).width + size * 1.6, h = size * 2;
+  const x0 = align === "center" ? x - w / 2 : x;
+  ctx.globalAlpha = alpha * clamp(p);
+  ctx.translate(x0 + w / 2, y); ctx.scale(p, p);
+  ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.fillStyle = fg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(label, 0, 2);
+  ctx.restore();
+  return w;
+}
+
+function outlineChip(t, start, text, x, y, alpha = 1) {
+  const p = outCubic(prog(t, start, start + 0.5));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.font = font(26, 600);
+  const w = ctx.measureText(text).width + 44, h = 56;
+  ctx.globalAlpha = alpha * p;
+  ctx.translate(x, y + (1 - p) * 20);
+  ctx.strokeStyle = "rgba(240,122,30,0.7)"; ctx.lineWidth = 2;
+  ctx.fillStyle = "rgba(240,122,30,0.08)";
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, 0, 2);
+  ctx.restore();
+}
+
+// corner brackets that lock onto a box
+function brackets(x, y, w, h, color, alpha, len = 34) {
+  ctx.save();
+  ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = 5; ctx.lineCap = "round";
+  const c = [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]];
+  for (const [cx, cy, sx, sy] of c) {
+    ctx.beginPath(); ctx.moveTo(cx, cy + sy * len); ctx.lineTo(cx, cy); ctx.lineTo(cx + sx * len, cy); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function brand(t, alpha) {
+  if (alpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(img.logo, 72, 52, 52, 52);
+  ctx.font = font(26, 700); ctx.fillStyle = INK; ctx.textBaseline = "middle";
+  ctx.fillText("ChorDefine", 138, 80);
+  ctx.restore();
+}
+
+// scene envelope: 0→1 on enter, 1→0 on exit
+const exitOf = (t, end, d = 0.55) => 1 - inOutCubic(prog(t, end - d, end));
+
+// ---------- scenes ----------
+const scenes = [
+  // 1. Title
+  [0, 4.2, (t) => {
+    const ex = exitOf(t, 4.2);
+    const lift = (1 - ex) * -60;
+    ctx.save(); ctx.translate(0, lift);
+    strings(t, 560, 30, ex, 0.15, 1.15);
+    const lp = outBack(prog(t, 0.9, 1.6));
+    if (lp > 0) {
+      const s = 190 * lp;
+      ctx.save(); ctx.globalAlpha = ex * clamp(lp);
+      ctx.shadowColor = "rgba(240,122,30,0.55)"; ctx.shadowBlur = 80;
+      ctx.drawImage(img.logo, W / 2 - s / 2, 330 - s / 2, s, s);
+      ctx.restore();
+    }
+    words(t, 1.45, [["Chor", INK], ["Define", ORANGE]].map(([w, c]) => [w, c]), W / 2, 640, 120, { align: "center", alpha: ex, stagger: 0.12, joined: true });
+    body(t, 2.05, "Guitar chord practice with real-time feedback", W / 2, 730, 36, 1400, { align: "center", alpha: ex });
+    ctx.restore();
+  }],
+  // 2. Problem
+  [3.9, 8.4, (t) => {
+    const ex = exitOf(t, 8.4);
+    ctx.save(); ctx.translate((1 - ex) * -120, 0);
+    eyebrow(t, 4.1, "THE PROBLEM", 200, 300, { alpha: ex });
+    words(t, 4.3, "Practising guitar alone?", 200, 420, 84, { alpha: ex, weight: 600, color: MUTED });
+    words(t, 5.0, "Nobody tells you when", 200, 530, 84, { alpha: ex });
+    const w2 = words(t, 5.25, [["a"], ["chord"], ["is"], ["wrong.", ORANGE]], 200, 635, 84, { alpha: ex });
+    // underline sweep under "wrong."
+    ctx.font = font(84, 700);
+    const wrongW = ctx.measureText("wrong.").width;
+    const up = outCubic(prog(t, 6.0, 6.6));
+    ctx.globalAlpha = ex; ctx.fillStyle = ORANGE;
+    ctx.fillRect(200 + w2 - wrongW, 663, wrongW * up, 8);
+    body(t, 6.4, "Beginners practise bad finger positions for weeks, and lessons cost money and time.", 200, 760, 34, 1300, { alpha: ex });
+    ctx.restore();
+  }],
+  // 3. Meet the app
+  [8.0, 12.6, (t) => {
+    const ex = exitOf(t, 12.6);
+    const u = t - 8.0;
+    const push = 1 + 0.04 * prog(t, 8, 12.6);
+    ctx.save();
+    ctx.translate(W / 2, H / 2); ctx.scale(push, push); ctx.translate(-W / 2, -H / 2);
+    eyebrow(t, 8.3, "MEET CHORDEFINE", W / 2, 96, { align: "center", alpha: ex });
+    const side = outCubic(prog(t, 8.7, 9.7));
+    phone("onboard-1", W / 2 - lerp(60, 430, side), 560, 700, { rot: -0.09 * side, alpha: ex * side * 0.9, glow: 0.15 });
+    phone("onboard-2", W / 2 + lerp(60, 430, side), 560, 700, { rot: 0.09 * side, alpha: ex * side * 0.9, glow: 0.15 });
+    const rise = outQuint(prog(t, 8.3, 9.3));
+    phone("main-0", W / 2, lerp(1200, 545, rise), 780, { alpha: ex, glow: 0.45 });
+    const labels = ["Learn", "Practice", "Explore", "Tune"];
+    labels.forEach((l, i) => outlineChip(t, 10.0 + i * 0.15, l, W / 2 + (i - 1.5) * 190, 1005, ex));
+    ctx.restore();
+  }],
+  // 4. Chord detection
+  [12.3, 17.9, (t) => {
+    const ex = exitOf(t, 17.9);
+    ctx.save(); ctx.translate((1 - ex) * -80, 0);
+    const tx = 150;
+    eyebrow(t, 12.6, "01 · CHORD DETECTION", tx, 330, { alpha: ex });
+    words(t, 12.8, "Sees the chord", tx, 440, 80, { alpha: ex });
+    words(t, 13.0, [["you're"], ["holding.", ORANGE]], tx, 535, 80, { alpha: ex });
+    body(t, 13.6, "A YOLOv8 model runs right on the phone and recognises chords A to G from the camera. No internet needed.", tx, 625, 32, 640, { alpha: ex });
+
+    // phone 1: live camera with scanning
+    const p1 = outQuint(prog(t, 12.6, 13.5));
+    const c1x = 1180, c1y = 545, ph = 820;
+    const s1 = phone("feedback-1", c1x, lerp(1250, c1y, p1), ph, { alpha: ex });
+    if (s1) {
+      const k = ph / 830, left = c1x - s1.w / 2, top = c1y - ph / 2;
+      // camera viewport inside the phone (measured from the cut-out)
+      const cam = { x: left + 38 * k, y: top + 140 * k, w: 335 * k, h: 450 * k };
+      const scan = prog(t, 13.6, 15.0);
+      if (scan > 0 && scan < 1) {
+        const sy = cam.y + cam.h * ((Math.sin(scan * Math.PI * 3 - Math.PI / 2) + 1) / 2);
+        const g = ctx.createLinearGradient(0, sy - 60, 0, sy);
+        g.addColorStop(0, "rgba(240,122,30,0)"); g.addColorStop(1, "rgba(240,122,30,0.45)");
+        ctx.save(); ctx.globalAlpha = ex;
+        ctx.fillStyle = g; ctx.fillRect(cam.x, sy - 60, cam.w, 60);
+        ctx.fillStyle = ORANGE; ctx.fillRect(cam.x, sy - 2, cam.w, 3);
+        ctx.restore();
+      }
+      // brackets converge on the fretting hand
+      const lock = outCubic(prog(t, 13.8, 14.8));
+      const target = { x: cam.x + 40 * k, y: cam.y + 170 * k, w: 250 * k, h: 250 * k };
+      const bx = lerp(cam.x, target.x, lock), by = lerp(cam.y, target.y, lock);
+      const bw = lerp(cam.w, target.w, lock), bh = lerp(cam.h, target.h, lock);
+      const locked = t > 14.8;
+      if (t > 13.6) brackets(bx, by, bw, bh, locked ? GREEN : ORANGE, ex * clamp((t - 13.6) * 3));
+      // cover the app's own caption, then write ours
+      ctx.save(); ctx.globalAlpha = ex;
+      ctx.fillStyle = screenBg; ctx.fillRect(left + 22 * k, top + 610 * k, 366 * k, 52 * k);
+      ctx.font = font(Math.round(23 * k), 600); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = locked ? "#1E9E4A" : "#8A8D93";
+      ctx.fillText(locked ? "Correct! You played A" : t > 13.6 ? "Detecting…" : "", left + 205 * k, top + 636 * k);
+      ctx.restore();
+      if (locked) chip(t, 14.8, "A Major", target.x + target.w / 2, target.y - 34, { color: GREEN, size: 24, icon: "✓", alpha: ex });
+    }
+    // phone 2: the result
+    const p2 = outQuint(prog(t, 15.3, 16.2));
+    phone("detect-0", lerp(1900, 1610, p2), 575, 760, { alpha: ex * p2, rot: lerp(0.15, 0.04, p2), glow: 0.3 });
+    chip(t, 16.2, "Instant feedback", 1610, 990, { color: "#1E2024", fg: INK, size: 24, alpha: ex });
+    ctx.restore();
+  }],
+  // 5. Fret position
+  [17.6, 22.0, (t) => {
+    const ex = exitOf(t, 22.0);
+    ctx.save(); ctx.translate((1 - ex) * 80, 0);
+    const p1 = outQuint(prog(t, 17.8, 18.7)), p2 = outQuint(prog(t, 18.1, 19.0));
+    const s = phone("fret-2", lerp(-300, 470, p1), 545, 800, { alpha: ex, glow: 0.4 });
+    phone("fret-3", lerp(-300, 860, p2), 575, 760, { alpha: ex * p2, rot: lerp(-0.12, 0.04, p2), glow: 0.25 });
+    if (s) {
+      // pulse over the three finger dots on the fret grid
+      const k = 800 / 656, left = 470 - s.w / 2, top = 545 - 400;
+      const cx = left + 162 * k, cy = top + 268 * k;
+      for (let r = 0; r < 2; r++) {
+        const ph = ((t - 19.0 - r * 0.6) % 1.2) / 1.2;
+        if (t < 19.0 + r * 0.6) continue;
+        ctx.save(); ctx.globalAlpha = ex * (1 - ph) * 0.9;
+        ctx.strokeStyle = ORANGE; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.ellipse(cx, cy, 70 + ph * 70, 34 + ph * 34, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.restore();
+      }
+    }
+    const tx = 1180;
+    eyebrow(t, 18.2, "02 · FRET POSITION", tx, 360, { alpha: ex });
+    words(t, 18.4, "Checks every", tx, 470, 80, { alpha: ex });
+    words(t, 18.6, [["finger"], ["on"], ["the"], ["fret.", ORANGE]], tx, 565, 80, { alpha: ex });
+    body(t, 19.2, "A second model tracks your hand across 12 fret zones and flags a finger that's off.", tx, 655, 32, 620, { alpha: ex });
+    ctx.restore();
+  }],
+  // 6. Practice tools
+  [21.7, 26.4, (t) => {
+    const ex = exitOf(t, 26.4);
+    ctx.save(); ctx.translate(0, (1 - ex) * -60);
+    eyebrow(t, 21.9, "03 · PRACTICE TOOLS", W / 2, 110, { align: "center", alpha: ex });
+    words(t, 22.0, [["Everything"], ["you"], ["need"], ["to"], ["practise.", ORANGE]], W / 2, 200, 64, { align: "center", alpha: ex });
+    const items = [["tuner-0", "Tuner"], ["ear-0", "Ear trainer"], ["lyrics-1", "Sing-along"]];
+    items.forEach(([n, label], i) => {
+      const st = 22.4 + i * 0.25;
+      const p = outQuint(prog(t, st, st + 0.9));
+      const x = W / 2 + (i - 1) * 470;
+      const float = Math.sin((t - st) * 1.6 + i) * 6;
+      phone(n, x, lerp(1250, 600, p) + float, 640, { alpha: ex, glow: 0.3 });
+      chip(t, st + 0.8, label, x, 975, { color: "#1E2024", fg: INK, size: 26, alpha: ex });
+    });
+    ctx.restore();
+  }],
+  // 7. Learn & track
+  [26.1, 30.4, (t) => {
+    const ex = exitOf(t, 30.4);
+    ctx.save(); ctx.translate((1 - ex) * -80, 0);
+    const tx = 150;
+    eyebrow(t, 26.4, "04 · LEARN & TRACK", tx, 360, { alpha: ex });
+    words(t, 26.6, "Lessons that", tx, 470, 80, { alpha: ex });
+    words(t, 26.8, [["work"], ["offline.", ORANGE]], tx, 565, 80, { alpha: ex });
+    body(t, 27.4, "Guided lessons, a full chord library and progress tracking, all without an internet connection.", tx, 655, 32, 560, { alpha: ex });
+    const fan = outQuint(prog(t, 26.5, 27.6));
+    const cx = 1350;
+    phone("library-1", cx - 330 * fan, 575, 720, { rot: -0.1 * fan, alpha: ex * fan, glow: 0.15 });
+    phone("progress-0", cx + 330 * fan, 575, 720, { rot: 0.1 * fan, alpha: ex * fan, glow: 0.15 });
+    phone("learn-0", cx, lerp(1250, 545, outQuint(prog(t, 26.4, 27.3))), 800, { alpha: ex, glow: 0.45 });
+    ctx.restore();
+  }],
+  // 8. Outro
+  [30.1, DURATION, (t) => {
+    strings(t, 940, 18, 0.9, 30.3, 31.0, 0, W);
+    const lp = outBack(prog(t, 30.4, 31.1));
+    if (lp > 0) {
+      const s = 140 * lp;
+      ctx.save(); ctx.globalAlpha = clamp(lp);
+      ctx.shadowColor = "rgba(240,122,30,0.55)"; ctx.shadowBlur = 70;
+      ctx.drawImage(img.logo, W / 2 - s / 2, 250 - s / 2, s, s);
+      ctx.restore();
+    }
+    words(t, 30.7, [["Chor", INK], ["Define", ORANGE]], W / 2, 450, 104, { align: "center", stagger: 0.12, joined: true });
+    const stack = ["Flutter", "TensorFlow Lite", "YOLOv8", "Roboflow"];
+    ctx.font = font(26, 600);
+    const ws = stack.map(s => ctx.measureText(s).width + 44 + 24);
+    let x = W / 2 - ws.reduce((a, b) => a + b, 0) / 2;
+    stack.forEach((s, i) => { outlineChip(t, 31.3 + i * 0.12, s, x + ws[i] / 2, 560); x += ws[i]; });
+    body(t, 31.9, "BSIT thesis · West Visayas State University", W / 2, 680, 34, 1600, { align: "center", color: INK });
+    body(t, 32.2, "I trained the chord-detection model and set up pitch detection.", W / 2, 735, 28, 1600, { align: "center" });
+  }],
+];
+
+function draw(t, frame = Math.round(t * FPS)) {
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.letterSpacing = "0px";
+  background(t);
+  for (const [a, b, fn] of scenes) if (t >= a && t <= b) { ctx.save(); fn(t); ctx.restore(); }
+  brand(t, clamp(prog(t, 8.3, 8.9)) * (1 - prog(t, 29.8, 30.3)));
+  finish(t, frame);
+  ctx.restore();
+}
+
+// ---------- export: deterministic, frame by frame ----------
+async function render(name = "chordefine-demo.webm", bitrate = 900_000) {
+  const muxer = new WebMMuxer.Muxer({
+    target: new WebMMuxer.ArrayBufferTarget(),
+    video: { codec: "V_VP9", width: W, height: H, frameRate: FPS },
+  });
+  const enc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => { throw e; } });
+  enc.configure({ codec: "vp09.00.10.08", width: W, height: H, bitrate, bitrateMode: "variable", latencyMode: "quality", framerate: FPS });
+  const n = DURATION * FPS;
+  for (let i = 0; i < n; i++) {
+    draw(i / FPS, i);
+    const f = new VideoFrame(cv, { timestamp: Math.round((i * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
+    enc.encode(f, { keyFrame: i % (FPS * 4) === 0 });
+    f.close();
+    while (enc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 1));
+    if (i % 60 === 0) document.title = `rendering ${i}/${n}`;
+  }
+  await enc.flush();
+  muxer.finalize();
+  const res = await fetch(`/save?name=${encodeURIComponent(name)}`, { method: "POST", body: muxer.target.buffer });
+  document.title = "done";
+  return res.text();
+}
+
+let screenBg = "#fff";
+window.ready = loadAll().then(() => {
+  // sample the phone's screen colour next to the caption
+  const c = document.createElement("canvas"); c.width = img["feedback-1"].width; c.height = img["feedback-1"].height;
+  const g = c.getContext("2d"); g.drawImage(img["feedback-1"], 0, 0);
+  const [r, gg, b] = g.getImageData(40, 650, 1, 1).data; screenBg = `rgb(${r},${gg},${b})`;
+  draw(1.8);
+});
+window.draw = draw; window.render = render;
+</script>
+</body>
+</html>

@@ -161,7 +161,10 @@ export function CaseStudyDialog({
                     target="_blank"
                     rel="noreferrer"
                   >
-                    <ExternalLink size={16} aria-hidden="true" /> Live site
+                    <ExternalLink size={16} aria-hidden="true" />{" "}
+                    {project.type === "Mobile app"
+                      ? "Download APK"
+                      : "Live site"}
                   </a>
                 </Gate>
               )}

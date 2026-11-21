@@ -268,23 +268,34 @@ const content: SiteContent = {
       tags: ["Data", "School"],
       featured: true,
       description:
-        "My thesis: a Flutter app that teaches guitar chords. It recognizes the chord you're holding through the camera, right on the phone, and checks your pitch through the mic. I trained the chord-detection model and set up the pitch detection.",
-      stack: ["Flutter", "Dart", "Google Colab", "Roboflow"],
+        "My thesis: an Android app that coaches you through guitar chords. It watches your hand through the camera and listens through the mic, all on the phone, and tells you right away if the chord is right. I trained the chord-detection model and set up the pitch detection.",
+      stack: [
+        "Flutter",
+        "Dart",
+        "TensorFlow Lite",
+        "YOLOv8",
+        "Google Colab",
+        "Roboflow",
+      ],
       image: "/projects/chordefine.png",
       imageSize: { width: 1920, height: 1080 },
-      github: "https://github.com/ronmagpantay1/ChorDefine",
-      live: PLACEHOLDER,
+      github: "https://github.com/paullooll/ChorDefine",
+      live: "https://drive.google.com/file/d/18RtMUydc3MUT07kaH0ouWyRk4P0o3NGk/view?usp=sharing",
       caseStudy: {
-        problem: PLACEHOLDER,
-        role: "I trained the chord-detection model and set up the pitch-detection package.",
+        problem:
+          "Learning guitar on your own means nobody tells you when a chord is wrong. Beginners practise bad finger positions for weeks, and lessons cost money and time not everyone has.",
+        role: "One of a five-person thesis team. I trained the chord-detection model on a Roboflow dataset in Google Colab and set up the pitch-detection package that checks what you play.",
         features: [
-          "Learn and practice guitar chords",
-          "Chord detection from the camera, on the device",
-          "Pitch detection from the microphone",
+          "Recognizes the chord you hold (A to G) through the camera, right on the phone",
+          "Checks your fret position and tells you right away if a finger is off",
+          "Listens through the mic to check the notes you play",
+          "Built-in tuner, ear trainer and sing-along with lyrics",
+          "Lessons and progress tracking that work offline",
         ],
-        result: PLACEHOLDER,
-        media: PLACEHOLDER,
-        video: PLACEHOLDER,
+        result:
+          "Completed as our BSIT thesis at West Visayas State University. Version 1.0 ships as an Android APK.",
+        media: [],
+        video: "/projects/chordefine-demo.webm",
       },
     },
     {
@@ -333,7 +344,14 @@ const content: SiteContent = {
     },
     {
       name: "Data / AI",
-      using: ["Python", "MySQL", "Firebase", "Antigravity", "OpenCode", "Manus"],
+      using: [
+        "Python",
+        "MySQL",
+        "Firebase",
+        "Antigravity",
+        "OpenCode",
+        "Manus",
+      ],
       learning: ["PostgreSQL", "MongoDB", "Google Colab"],
     },
     {
