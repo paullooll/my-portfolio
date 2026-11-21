@@ -135,7 +135,6 @@ export function CaseStudyDialog({
                   src={cs.video}
                   poster={project.image}
                   controls
-                  muted
                   playsInline
                   preload="metadata"
                 />

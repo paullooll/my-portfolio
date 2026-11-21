@@ -2,6 +2,8 @@
 <!-- ChorDefine demo video renderer (source of public/projects/chordefine-demo.webm).
      Re-render: copy logo.png + Poppins-*.ttf from the ChorDefine repo here, run
      `SHARP=<portfolio>/node_modules/sharp node cut.cjs` (makes phones/), `node server.cjs`,
+     run `node ../tts/gen.mjs af_heart voice` from this folder (needs `npm i kokoro-js@1.2.1`;
+     makes voice/*.wav + timing.json; also copy a/c/g.wav from the app as voice/strum-*.wav),
      open http://localhost:4390 and run `await render()` in the console; output lands in out/. -->
 <html>
 <head>
@@ -16,7 +18,17 @@
 <body>
 <canvas id="c" width="1920" height="1080"></canvas>
 <script>
-const W = 1920, H = 1080, FPS = 30, DURATION = 34;
+const W = 1920, H = 1080, FPS = 30, DURATION = 34; // DURATION = the animation's own timeline
+// Narration timing (voice/timing.json): each scene [bounds[i], bounds[i+1]] is stretched to
+// [newBounds[i], newBounds[i+1]] so its voice line fits. OUT = final video length.
+let timing = null, OUT = DURATION;
+function seg(x, from, to) {
+  let i = 0;
+  while (i < from.length - 2 && x > from[i + 1]) i++;
+  return to[i] + ((x - from[i]) * (to[i + 1] - to[i])) / (from[i + 1] - from[i]);
+}
+const warp = T => (timing ? seg(T, timing.newBounds, timing.bounds) : T);   // video time -> animation time
+const unwarp = t => (timing ? seg(t, timing.bounds, timing.newBounds) : t); // animation time -> video time
 const cv = document.getElementById("c"), ctx = cv.getContext("2d");
 
 // ---------- palette (ChorDefine's own brand) ----------
@@ -51,6 +63,8 @@ async function loadAll() {
     document.fonts.add(await ff.load());
   }));
   await Promise.all(names.map(loadImg));
+  timing = await (await fetch("voice/timing.json")).json();
+  OUT = timing.newBounds.at(-1);
 }
 
 // deterministic film grain
@@ -89,9 +103,9 @@ function finish(t, frame) {
   ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
   // timeline bar
   ctx.fillStyle = "rgba(255,255,255,0.08)"; ctx.fillRect(0, H - 4, W, 4);
-  ctx.fillStyle = ORANGE; ctx.fillRect(0, H - 4, W * (t / DURATION), 4);
+  ctx.fillStyle = ORANGE; ctx.fillRect(0, H - 4, W * (t / OUT), 4);
   // fade in / out from black
-  const fade = Math.max(1 - prog(t, 0, 0.5), prog(t, DURATION - 0.7, DURATION));
+  const fade = Math.max(1 - prog(t, 0, 0.5), prog(t, OUT - 0.7, OUT));
   if (fade > 0) { ctx.fillStyle = `rgba(0,0,0,${fade})`; ctx.fillRect(0, 0, W, H); }
 }
 
@@ -436,15 +450,44 @@ const scenes = [
   }],
 ];
 
-function draw(t, frame = Math.round(t * FPS)) {
+function draw(T, frame = Math.round(T * FPS)) {
+  const t = warp(T);
   ctx.save();
   ctx.clearRect(0, 0, W, H);
   ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.letterSpacing = "0px";
   background(t);
   for (const [a, b, fn] of scenes) if (t >= a && t <= b) { ctx.save(); fn(t); ctx.restore(); }
   brand(t, clamp(prog(t, 8.3, 8.9)) * (1 - prog(t, 29.8, 30.3)));
-  finish(t, frame);
+  finish(T, frame);
   ctx.restore();
+}
+
+// ---------- audio: Kokoro voice lines + quiet strums from the app's own samples ----------
+async function mixAudio() {
+  const sr = 48000, ac = new OfflineAudioContext(2, Math.ceil(OUT * sr), sr);
+  const load = async f => ac.decodeAudioData(await (await fetch("voice/" + f)).arrayBuffer());
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -20; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
+  comp.connect(ac.destination);
+  for (const c of timing.clips) {
+    const src = ac.createBufferSource(); src.buffer = await load(c.file);
+    src.connect(comp); src.start(c.at);
+  }
+  const strum = async (f, at, gain) => {
+    const src = ac.createBufferSource(); src.buffer = await load(f);
+    const g = ac.createGain(); g.gain.value = gain;
+    g.gain.setValueAtTime(gain, at + 1.2); g.gain.linearRampToValueAtTime(0, at + 3.2);
+    src.connect(g).connect(ac.destination); src.start(at); src.stop(at + 3.3);
+  };
+  await strum("strum-c.wav", unwarp(1.15), 0.16);  // strings pluck in the title
+  await strum("strum-a.wav", unwarp(14.8), 0.2);   // "A Major" locks
+  await strum("strum-g.wav", unwarp(31.0), 0.16);  // outro strings
+  const buf = await ac.startRendering();
+  let peak = 0;
+  for (let ch = 0; ch < 2; ch++) for (const v of buf.getChannelData(ch)) peak = Math.max(peak, Math.abs(v));
+  const k = 0.89 / peak; // normalise to -1 dBFS
+  for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); for (let i = 0; i < d.length; i++) d[i] *= k; }
+  return buf;
 }
 
 // ---------- export: deterministic, frame by frame ----------
@@ -452,19 +495,37 @@ async function render(name = "chordefine-demo.webm", bitrate = 900_000) {
   const muxer = new WebMMuxer.Muxer({
     target: new WebMMuxer.ArrayBufferTarget(),
     video: { codec: "V_VP9", width: W, height: H, frameRate: FPS },
+    audio: { codec: "A_OPUS", sampleRate: 48000, numberOfChannels: 2 },
   });
+  const ab = await mixAudio();
+  const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { throw e; } });
+  aenc.configure({ codec: "opus", sampleRate: 48000, numberOfChannels: 2, bitrate: 96000 });
+  let apos = 0;
+  const feedAudio = untilSec => {
+    const until = Math.min(ab.length, Math.round(untilSec * 48000));
+    while (apos < until) {
+      const n = Math.min(4800, ab.length - apos), data = new Float32Array(n * 2);
+      data.set(ab.getChannelData(0).subarray(apos, apos + n), 0);
+      data.set(ab.getChannelData(1).subarray(apos, apos + n), n);
+      const ad = new AudioData({ format: "f32-planar", sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((apos / 48000) * 1e6), data });
+      aenc.encode(ad); ad.close(); apos += n;
+    }
+  };
   const enc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => { throw e; } });
   enc.configure({ codec: "vp09.00.10.08", width: W, height: H, bitrate, bitrateMode: "variable", latencyMode: "quality", framerate: FPS });
-  const n = DURATION * FPS;
+  const n = Math.round(OUT * FPS);
   for (let i = 0; i < n; i++) {
     draw(i / FPS, i);
     const f = new VideoFrame(cv, { timestamp: Math.round((i * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
     enc.encode(f, { keyFrame: i % (FPS * 4) === 0 });
     f.close();
+    feedAudio((i + 1) / FPS);
     while (enc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 1));
     if (i % 60 === 0) document.title = `rendering ${i}/${n}`;
   }
+  feedAudio(OUT + 1);
   await enc.flush();
+  await aenc.flush();
   muxer.finalize();
   const res = await fetch(`/save?name=${encodeURIComponent(name)}`, { method: "POST", body: muxer.target.buffer });
   document.title = "done";

@@ -1,6 +1,6 @@
 // Static server for the video renderer; POST /save?name=x.webm writes the body to ./out.
 const http = require("http"), fs = require("fs"), path = require("path");
-const root = __dirname, types = { ".html": "text/html", ".png": "image/png", ".ttf": "font/ttf", ".js": "text/javascript" };
+const root = __dirname, types = { ".html": "text/html", ".png": "image/png", ".ttf": "font/ttf", ".js": "text/javascript", ".wav": "audio/wav", ".json": "application/json" };
 http.createServer((req, res) => {
   const u = new URL(req.url, "http://x");
   if (req.method === "POST" && u.pathname === "/save") {
