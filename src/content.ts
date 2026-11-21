@@ -71,11 +71,6 @@ export interface TimelineEntry {
   current?: boolean;
 }
 
-export interface NowItem {
-  topic: string;
-  note: Maybe<string>;
-}
-
 export interface Hobby {
   icon: "music" | "gamepad";
   title: string;
@@ -105,7 +100,6 @@ export interface SiteContent {
   /** `game` is only used by the hidden easter-egg world. */
   sections: { id: SectionId; plain: string; game: string; summary: string }[];
   about: { lede: string; body: string[]; training: string[] };
-  now: { lede: string; updated: Maybe<string>; items: NowItem[] };
   hobbies: Hobby[];
   projects: Project[];
   skills: SkillGroup[];
@@ -186,18 +180,6 @@ const content: SiteContent = {
       "Cybersecurity",
       "Data mining",
       "IT project management",
-    ],
-  },
-
-  now: {
-    lede: "What I'm exploring right now, through my MIT studies and on my own.",
-    updated: PLACEHOLDER,
-    items: [
-      { topic: "Artificial intelligence", note: PLACEHOLDER },
-      { topic: "Cloud computing", note: PLACEHOLDER },
-      { topic: "Cybersecurity", note: PLACEHOLDER },
-      { topic: "Data mining", note: PLACEHOLDER },
-      { topic: "IT project management", note: PLACEHOLDER },
     ],
   },
 

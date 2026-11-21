@@ -297,36 +297,6 @@
   font-size: var(--text-lg);
   line-height: 1.55;
 }
-.now {
-  display: grid;
-  gap: 10px;
-  margin-top: 8px;
-}
-.now-head {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-}
-.now-head h3 {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  font-size: var(--text-base);
-}
-.now-list {
-  list-style: none;
-  display: grid;
-}
-.now-list li {
-  padding: 8px 0;
-  border-top: 1px solid var(--line);
-  font-size: var(--text-base);
-}
-.now-topic {
-  font-weight: 500;
-}
 .outside-head {
   margin: 56px 0 16px;
 }

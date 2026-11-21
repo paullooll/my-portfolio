@@ -1,6 +1,5 @@
 import { Gamepad2, Music } from "lucide-react";
 import content, { type Hobby } from "@/content";
-import { Gate } from "@/components/Gate";
 import { NowPlaying } from "@/components/NowPlaying";
 import { SectionFrame } from "@/components/SectionFrame";
 
@@ -9,9 +8,9 @@ const icons: Record<Hobby["icon"], typeof Music> = {
   gamepad: Gamepad2,
 };
 
-/** About: photo + story, the Now/Learning card, and a few things outside work. */
+/** About: photo + story and a few things outside work. */
 export function About() {
-  const { about, now, hobbies } = content;
+  const { about, hobbies } = content;
   return (
     <SectionFrame id="about" title={`Hi, I'm ${content.shortName}`}>
       <div className="about-grid">
@@ -37,32 +36,6 @@ export function About() {
               {p}
             </p>
           ))}
-
-          <section
-            className="card card-pad now"
-            aria-labelledby="now-heading"
-            data-reveal
-          >
-            <div className="now-head">
-              <h3 id="now-heading">
-                <span className="live-dot" aria-hidden="true" /> Now / Learning
-              </h3>
-              <Gate value={now.updated} as="span">
-                <span className="mono muted">Updated {now.updated}</span>
-              </Gate>
-            </div>
-            <p className="muted">{now.lede}</p>
-            <ul className="now-list">
-              {now.items.map(i => (
-                <li key={i.topic}>
-                  <span className="now-topic">{i.topic}</span>
-                  <Gate value={i.note} as="span">
-                    <span className="muted"> — {i.note}</span>
-                  </Gate>
-                </li>
-              ))}
-            </ul>
-          </section>
         </div>
       </div>
 

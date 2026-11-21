@@ -292,13 +292,10 @@ export function answer(question: string, c: SiteContent): HauntReply {
     };
 
   if (mentions(q, ["learning", "learn", "exploring", "explore", "now", "currently", "interested", "interest"])) {
-    const notes = c.now.items
-      .map(i => (filled(i.note) ? `${i.topic}: ${i.note}` : i.topic))
-      .join(", ");
     return {
       topic: "now",
-      text: `${c.now.lede} Right now: ${notes}.`,
-      links: [{ label: "Now / Learning", href: "#about" }],
+      text: `Through my MIT studies and on my own, I'm exploring: ${c.about.training.join(", ")}.`,
+      links: [{ label: "About", href: "#about" }],
     };
   }
 
