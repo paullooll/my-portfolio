@@ -94,6 +94,8 @@ export interface SiteContent {
   name: string;
   shortName: string;
   role: string;
+  /** Hero typing effect cycles through these. Real titles only (add more as they become true). */
+  roles: string[];
   location: string;
   valueStatement: string;
   /** Small chips under the hero. The first one gets the "live" dot. */
@@ -119,6 +121,7 @@ const content: SiteContent = {
   name: "Richie Paul Aquiño",
   shortName: "Richie",
   role: "Junior Fullstack Developer",
+  roles: ["Junior Fullstack Developer", "MIT student · WVSU"],
   location: "Iloilo City, Philippines",
   valueStatement:
     "I build web systems that turn manual government processes into tools people can rely on.",

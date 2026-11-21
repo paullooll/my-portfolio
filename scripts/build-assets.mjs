@@ -88,3 +88,22 @@ for (const [pkg, file] of fonts) {
   );
   console.log("font:", file);
 }
+
+// ---- Hero portrait: background-removed cutout → trimmed, upper-body crop. ----
+// Source lives outside public/ (assets-src/) so only the optimized files ship.
+{
+  const src = path.join(root, "assets-src", "portrait-cutout.png");
+  const trimmed = await sharp(src).trim().png().toBuffer({ resolveWithObject: true });
+  const { width: tw, height: th } = trimmed.info;
+  const crop = sharp(trimmed.data).extract({
+    left: 0,
+    top: 0,
+    width: tw,
+    height: Math.round(th * 0.6), // head to hips; CSS fades the bottom edge
+  });
+  const base = crop.clone().resize({ width: 560, withoutEnlargement: true });
+  await base.clone().webp({ quality: 82, alphaQuality: 90 }).toFile(path.join(root, "public", "portrait.webp"));
+  await base.clone().png({ compressionLevel: 9, palette: true, quality: 90 }).toFile(path.join(root, "public", "portrait.png"));
+  const meta = await sharp(path.join(root, "public", "portrait.webp")).metadata();
+  console.log(`portrait: public/portrait.webp + .png (${meta.width}x${meta.height})`);
+}

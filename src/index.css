@@ -3,6 +3,7 @@
 @import "./styles/base.css";
 @import "./styles/components.css";
 @import "./sections/sections.css";
+@import "./styles/fx.css";
 @import "./components/haunt/haunt.css";
 @import "./components/haunt/chat.css";
 @import "./styles/game.css";

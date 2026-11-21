@@ -16,7 +16,14 @@ export function useReveal(root: RefObject<HTMLElement | null>) {
     const items = Array.from(
       el.querySelectorAll<HTMLElement>("[data-reveal]")
     ).filter(n => n.getBoundingClientRect().top > vh); // read all first…
-    items.forEach(n => n.classList.add("reveal-pending")); // …then write
+    items.forEach(n => {
+      n.classList.add("reveal-pending"); // …then write
+      // Stagger siblings (cards in a grid, list items) by their position.
+      const i = n.parentElement
+        ? Array.prototype.indexOf.call(n.parentElement.children, n)
+        : 0;
+      n.style.setProperty("--reveal-delay", `${Math.min(i, 5) * 70}ms`);
+    });
 
     const io = new IntersectionObserver(
       entries => {

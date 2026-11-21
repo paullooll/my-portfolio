@@ -1,12 +1,15 @@
-import { Suspense, lazy, useRef } from "react";
+import { Suspense, lazy, useEffect, useRef, useState } from "react";
 import { Facebook, Github, Instagram, Linkedin } from "lucide-react";
 import content, { type SectionId, type Social } from "@/content";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ScrollProgress } from "@/components/fx/ScrollProgress";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAfterLoad } from "@/hooks/useAfterLoad";
 import { useEasterEgg } from "@/hooks/useEasterEgg";
 import { track } from "@/lib/analytics";
 import { useReveal } from "@/motion/useReveal";
+import { shouldIgnoreTarget } from "@/lib/sequence";
+import type { PaletteMode } from "@/components/fx/CommandPalette";
 import { About } from "@/sections/About";
 import { Contact } from "@/sections/Contact";
 import { Experience } from "@/sections/Experience";
@@ -19,6 +22,10 @@ const HauntChat = lazy(() =>
   import("@/components/haunt/HauntChat").then(m => ({ default: m.HauntChat }))
 );
 const HauntWorld = lazy(() => import("@/game/HauntWorld"));
+// Decorative background canvas: after load, never in the prerendered HTML.
+const Constellation = lazy(() => import("@/components/fx/Constellation"));
+// Command palette + mini terminal: fetched the first time it is opened.
+const CommandPalette = lazy(() => import("@/components/fx/CommandPalette"));
 
 const socialIcons: Record<Social["icon"], typeof Github> = {
   facebook: Facebook,
@@ -34,6 +41,28 @@ export default function Home() {
   const egg = useEasterEgg();
   const extras = useAfterLoad();
   useReveal(mainRef);
+  const [palette, setPalette] = useState<{ open: boolean; mode: PaletteMode } | null>(null);
+  const openPalette = (mode: PaletteMode = "palette") => setPalette({ open: true, mode });
+
+  // Ctrl/Cmd+K toggles the palette anywhere; ` opens the terminal (not while typing).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPalette(p => ({ open: !p?.open, mode: "palette" }));
+      } else if (
+        e.key === "`" &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !shouldIgnoreTarget(e.target as HTMLElement | null)
+      ) {
+        e.preventDefault();
+        setPalette({ open: true, mode: "terminal" });
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const goTo = (id: SectionId) => {
     egg.closeGame();
@@ -48,10 +77,20 @@ export default function Home() {
 
   return (
     <>
+      <div className="fx-grid" aria-hidden="true" />
+      {extras && (
+        <Suspense fallback={null}>
+          <Constellation />
+        </Suspense>
+      )}
       <a className="skip-link" href="#main">
         Skip to content
       </a>
-      <SiteHeader onCvClick={() => track("cv-download")} />
+      <ScrollProgress />
+      <SiteHeader
+        onCvClick={() => track("cv-download")}
+        onOpenPalette={() => openPalette()}
+      />
       <main id="main" ref={mainRef} tabIndex={-1}>
         <Hero />
         <Projects />
@@ -88,6 +127,17 @@ export default function Home() {
       {extras && (
         <Suspense fallback={null}>
           <HauntChat />
+        </Suspense>
+      )}
+      {palette && (
+        <Suspense fallback={null}>
+          <CommandPalette
+            open={palette.open}
+            mode={palette.mode}
+            onOpenChange={open => setPalette(p => ({ mode: p?.mode ?? "palette", open }))}
+            onModeChange={mode => setPalette({ open: true, mode })}
+            onGoTo={goTo}
+          />
         </Suspense>
       )}
       {egg.open && (

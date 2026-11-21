@@ -1,8 +1,39 @@
 import { useEffect, useState } from "react";
-import { Download, Menu, Moon, Sun, X } from "lucide-react";
+import { Command, Download, Menu, Moon, Sun, X } from "lucide-react";
 import content from "@/content";
 import { useTheme } from "@/contexts/ThemeContext";
 import { Gate } from "./Gate";
+import { prefersReducedMotion } from "@/motion/reducedMotion";
+
+/**
+ * Theme switch with a circular reveal from the toggle (View Transitions API).
+ * The class flips synchronously inside the transition; ThemeContext then
+ * stores the same value. Falls back to an instant switch.
+ */
+function switchTheme(button: HTMLElement, toggle?: () => void) {
+  if (!toggle) return;
+  const flip = () => {
+    document.documentElement.classList.toggle("dark");
+    toggle();
+  };
+  const doc = document as Document & {
+    startViewTransition?: (cb: () => void) => { ready: Promise<void> };
+  };
+  if (!doc.startViewTransition || prefersReducedMotion()) return flip();
+  const r = button.getBoundingClientRect();
+  const x = r.left + r.width / 2;
+  const y = r.top + r.height / 2;
+  const end = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+  doc
+    .startViewTransition(flip)
+    .ready.then(() =>
+      document.documentElement.animate(
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${end}px at ${x}px ${y}px)`] },
+        { duration: 520, easing: "cubic-bezier(0.4, 0, 0.2, 1)", pseudoElement: "::view-transition-new(root)" }
+      )
+    )
+    .catch(() => {});
+}
 
 /** Section links in the header (Home is the brand link). */
 const links = content.sections.filter(s => s.id !== "home");
@@ -30,7 +61,13 @@ function ResumeButton({
 }
 
 /** Sticky header: brand, section nav, theme toggle, resume, mobile menu. */
-export function SiteHeader({ onCvClick }: { onCvClick: () => void }) {
+export function SiteHeader({
+  onCvClick,
+  onOpenPalette,
+}: {
+  onCvClick: () => void;
+  onOpenPalette: () => void;
+}) {
   const { toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
 
@@ -69,11 +106,21 @@ export function SiteHeader({ onCvClick }: { onCvClick: () => void }) {
         </nav>
 
         <div className="header-actions">
+          <button
+            type="button"
+            className="icon-button palette-trigger"
+            onClick={onOpenPalette}
+            aria-keyshortcuts="Control+K Meta+K"
+          >
+            <Command size={16} aria-hidden="true" />
+            <span className="palette-trigger-label mono" aria-hidden="true">K</span>
+            <span className="sr-only">Open command palette (Ctrl+K)</span>
+          </button>
           {/* Same markup in both themes (safe to prerender); CSS shows the right icon. */}
           <button
             type="button"
             className="icon-button theme-toggle"
-            onClick={() => toggleTheme?.()}
+            onClick={e => switchTheme(e.currentTarget, toggleTheme)}
           >
             <span className="when-dark">
               <Sun size={17} aria-hidden="true" />
