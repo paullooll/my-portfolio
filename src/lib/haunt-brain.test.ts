@@ -63,7 +63,11 @@ describe("answer: content", () => {
   it("explains private government projects without details", () => {
     const r = answer("tell me about solid", content);
     expect(r.text).toContain("internal government system");
+    expect(r.text).toContain("demo video runs on a copy with made-up data");
     expect(r.links?.[0].href).toBe("#project-solid");
+    expect(answer("budget tracker", content).text).toContain(
+      "no public screenshots"
+    );
   });
 
   it("links a public project's code", () => {

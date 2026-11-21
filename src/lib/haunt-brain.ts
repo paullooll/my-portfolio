@@ -153,7 +153,9 @@ function projectAnswer(p: Project): HauntReply {
   if (filled(p.caseStudy.result)) parts.push(`Result: ${p.caseStudy.result}`);
   if (p.private)
     parts.push(
-      "It's an internal government system, so there are no public screenshots, links or data."
+      filled(p.caseStudy.video)
+        ? "It's an internal government system, so the demo video runs on a copy with made-up data, and there's no public link."
+        : "It's an internal government system, so there are no public screenshots, links or data."
     );
   const links = [caseLink(p)];
   if (p.github) links.push({ label: "Source on GitHub", href: p.github });
@@ -224,7 +226,7 @@ export function answer(question: string, c: SiteContent): HauntReply {
   )
     return {
       topic: "privacy",
-      text: `Some of ${name}'s work is for the Iloilo City Government. Those systems are internal, so the site shows mock previews instead of real screenshots, and no internal URLs, names or data.`,
+      text: `Some of ${name}'s work is for the Iloilo City Government. Those systems are internal, so the site shows mock previews or demo videos with made-up data instead of real screenshots, and no internal URLs, names or data.`,
       links: [{ label: "See the projects", href: "#projects" }],
     };
 

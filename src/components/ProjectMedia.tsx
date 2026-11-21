@@ -3,8 +3,7 @@ import { MockPreview } from "./MockPreview";
 import { Picture } from "./Picture";
 
 /**
- * A project's preview image: the real screenshot for public projects, a
- * data-free mock for internal ones (never a real government screenshot).
+ * A project's preview image, or a data-free mock when there is none.
  */
 export function ProjectMedia({
   project,
@@ -14,7 +13,7 @@ export function ProjectMedia({
   /** Empty by default: on cards the title right below already names it. */
   alt?: string;
 }) {
-  if (project.private || !project.image || !project.imageSize)
+  if (!project.image || !project.imageSize)
     return <MockPreview title={project.title} />;
   return (
     <Picture

@@ -12,6 +12,18 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["preview", "--port", "4173"],
       "port": 4173
+    },
+    {
+      "name": "warehouse-api",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\HP\\AppData\\Local\\Temp\\claude\\d3a25fb3bf42019f\\c5ab6d61-90e3-4c73-8a77-c7e2604296f1\\scratchpad\\run-warehouse-api.ps1"],
+      "port": 3100
+    },
+    {
+      "name": "warehouse-web",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\HP\\AppData\\Local\\Temp\\claude\\d3a25fb3bf42019f\\c5ab6d61-90e3-4c73-8a77-c7e2604296f1\\scratchpad\\run-warehouse-web.ps1"],
+      "port": 5174
     }
   ]
 }

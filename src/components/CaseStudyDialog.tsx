@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { ExternalLink, Github, Lock, X } from "lucide-react";
 import type { Project } from "@/content";
 import { useIsDev } from "@/hooks/useIsDev";
-import { visibleItems } from "@/lib/placeholder";
+import { isFilled, visibleItems } from "@/lib/placeholder";
 import { Gate } from "./Gate";
 import { Picture } from "./Picture";
 import { ProjectMedia } from "./ProjectMedia";
@@ -30,6 +30,9 @@ export function CaseStudyDialog({
   }, [project]);
 
   const cs = project?.caseStudy;
+  const hasVideo = isFilled(cs?.video);
+  // An empty media list means "video only" (not an unfilled placeholder).
+  const videoOnly = hasVideo && Array.isArray(cs?.media) && !cs.media.length;
   return (
     <dialog
       ref={ref}
@@ -98,13 +101,16 @@ export function CaseStudyDialog({
 
             <section aria-labelledby="case-shots-title" className="case-shots">
               <h3 id="case-shots-title" className="eyebrow">
-                Screenshots
+                {videoOnly ? "Demo video" : "Screenshots"}
               </h3>
-              <ProjectMedia
-                project={project}
-                alt={`${project.title} screenshot`}
-              />
-              {!project.private && (
+              {/* With a video, the card image is its poster instead. */}
+              {!hasVideo && (
+                <ProjectMedia
+                  project={project}
+                  alt={`${project.title} screenshot`}
+                />
+              )}
+              {!videoOnly && (
                 <Gate value={cs.media}>
                   {visibleItems(cs.media, isDev).map(src => (
                     <Picture
@@ -119,17 +125,19 @@ export function CaseStudyDialog({
               )}
               {project.private && (
                 <p className="mono muted">
-                  Internal government system: real screenshots, URLs, names
-                  and data are not shown.
+                  {hasVideo
+                    ? "Internal government system: this demo runs on a copy with made-up data. The real URLs, names, data and city seal are not shown."
+                    : "Internal government system: real screenshots, URLs, names and data are not shown."}
                 </p>
               )}
               <Gate value={cs.video}>
                 <video
                   src={cs.video}
+                  poster={project.image}
                   controls
                   muted
                   playsInline
-                  preload="none"
+                  preload="metadata"
                 />
               </Gate>
             </section>

@@ -33,22 +33,22 @@ export interface Project {
   description: string;
   stack: string[];
   /**
-   * Public screenshot (PNG path; a .webp next to it is used when present).
-   * Leave out for internal/government systems: they get a mock preview instead.
+   * Card image (PNG path; a .webp next to it is used when present), also the
+   * video poster. Without it the card shows a mock preview.
    */
   image?: string;
   /** Pixel size of the screenshot, used to reserve space and avoid layout shift. */
   imageSize?: { width: number; height: number };
   github?: string;
   live?: Maybe<string>;
-  /** Internal system: no screenshots, URLs, names or data are shown. */
+  /** Internal system: no live link, real URLs, names or data are shown. */
   private?: boolean;
   caseStudy: {
     problem: Maybe<string>;
     role: string;
     features: string[];
     result: Maybe<string>;
-    /** Extra screenshots (public projects only). */
+    /** Extra screenshots. `[]` with a video = video only. */
     media: Maybe<string[]>;
     video: Maybe<string>;
   };
@@ -118,7 +118,7 @@ const content: SiteContent = {
   roles: ["Junior Fullstack Developer", "MIT student · WVSU"],
   location: "Iloilo City, Philippines",
   valueStatement:
-    "I build web systems that turn manual government processes into tools people can rely on.",
+    "I build secure web systems that replace slow, manual work with tools teams can rely on.",
   status: [
     "Open to work",
     "Iloilo City Government",
@@ -140,7 +140,7 @@ const content: SiteContent = {
       id: "projects",
       plain: "Projects",
       game: "MISSIONS",
-      summary: "Web, data and government work, with case studies.",
+      summary: "Government systems and school apps, each with a case study.",
     },
     {
       id: "skills",
@@ -158,21 +158,21 @@ const content: SiteContent = {
       id: "about",
       plain: "About",
       game: "PROFILE",
-      summary: "My story and what I'm exploring now.",
+      summary: "My story and what drives the way I build.",
     },
     {
       id: "contact",
       plain: "Contact",
       game: "TRANSMISSION",
-      summary: "Send me a message. I'm open to work.",
+      summary: "Have a role or project in mind? Send me a message.",
     },
   ],
 
   about: {
-    lede: "I'm drawn to new technology and the possibilities it creates — especially the thoughtful web experiences that connect people, ideas, and useful tools.",
+    lede: "I love what new technology makes possible, especially web tools that make people's everyday work simpler.",
     body: [
-      "I'm growing toward full-stack web development, building confidence across the interface, the server, and the data behind a product. I enjoy learning how each layer fits together and turning new ideas into reliable, usable experiences.",
-      "I'm especially interested in modern JavaScript, React, APIs, databases, AI-assisted tools, and the emerging technologies shaping how we build for the web. I learn by experimenting, asking good questions, and making practical projects.",
+      "I'm a full-stack developer who works across the interface, the server and the data behind a product. I care about how each layer fits together, so what I ship is reliable, secure and easy to use.",
+      "Right now I'm going deeper into modern JavaScript, React, APIs, databases and AI-assisted tools. I learn by building practical projects and asking good questions, and I bring what I learn straight into real work.",
     ],
     training: [
       "Artificial intelligence",
@@ -206,27 +206,34 @@ const content: SiteContent = {
       tags: ["Web", "Security", "Work"],
       featured: true,
       description:
-        "Lets Iloilo City Government offices request supplies from the city warehouse online. I built the role-based access control, JWT authentication, and database design, and contributed frontend modules.",
+        "Turns the Iloilo City Government's manual warehouse process into one secure online system, where every supply is tracked from contract to issue. I connected it to the city's procurement system, secured it end to end, and built its core screens.",
       stack: [
         "React",
         "TypeScript",
         "NestJS",
         "NextJS",
         "TailwindCSS",
-        "PostgreSQL",
+        "MySQL",
       ],
+      // Name card; also the demo video's poster.
+      image: "/projects/solid.png",
+      imageSize: { width: 1600, height: 1000 },
       private: true,
       caseStudy: {
-        problem: PLACEHOLDER,
-        role: "Developed the RBAC, JWT authentication, and the database structure, and contributed to several frontend modules.",
+        problem:
+          "Supplies were tracked by hand. The process was slow, there was no single masterlist, and it was hard to tell who requested what, so the city had little real control over its warehouse.",
+        role: "I connected SOLID to the Iloilo City Procurement System's API so contracts flow in automatically, secured it with role-based access control, JWT authentication and other safeguards, and built the Contract Monitoring, Add RIS, Add Inventory and Issued Items tabs.",
         features: [
-          "Warehouse supply requests",
-          "Role-based access control (RBAC)",
-          "JWT authentication",
+          "Contracts pulled in automatically from the city's procurement system",
+          "One masterlist of every supply in the warehouse",
+          "Every request on record: who asked, what was issued, and when",
+          "Contract Monitoring that shows where every supply contract stands",
+          "Role-based access and JWT sign-in, so people only reach what their role allows",
         ],
-        result: PLACEHOLDER,
-        media: PLACEHOLDER,
-        video: PLACEHOLDER,
+        result:
+          "Live in staging and being tested. A UI/UX refresh comes next, before it goes live.",
+        media: [],
+        video: "/projects/solid-ris-flow.webm",
       },
     },
     {
@@ -237,16 +244,16 @@ const content: SiteContent = {
       tags: ["Web", "Work"],
       featured: true,
       description:
-        "Gives the City Budget Office one view of every department's budget, with add, edit, and delete for Program, Project and Activity (PPA) entries.",
+        "Gives the City Budget Office one view of every department's budget, so nobody has to piece it together office by office. Staff add, edit and delete Program, Project and Activity (PPA) entries in one place.",
       stack: ["React", "TypeScript", "Express", "TailwindCSS", "MySQL"],
       private: true,
       caseStudy: {
         problem:
           "The City Budget office needed one place to overview the budgets of all the departments.",
-        role: "Created the web-based budget tracker.",
+        role: "I built the budget tracker as a web app, from the screens to the database behind them.",
         features: [
-          "Overview of every department's budget",
-          "Program Project and Activity (PPA) entries: add, edit, and delete",
+          "Every department's budget in one overview",
+          "Add, edit and delete Program, Project and Activity (PPA) entries",
         ],
         result: PLACEHOLDER,
         media: PLACEHOLDER,
@@ -261,7 +268,7 @@ const content: SiteContent = {
       tags: ["Data", "School"],
       featured: true,
       description:
-        "My thesis: a Flutter app for learning guitar chords, with on-device chord detection from the camera and pitch detection from the mic. I trained the model and set up the pitch detection.",
+        "My thesis: a Flutter app that teaches guitar chords. It recognizes the chord you're holding through the camera, right on the phone, and checks your pitch through the mic. I trained the chord-detection model and set up the pitch detection.",
       stack: ["Flutter", "Dart", "Google Colab", "Roboflow"],
       image: "/projects/chordefine.png",
       imageSize: { width: 1920, height: 1080 },
@@ -269,8 +276,12 @@ const content: SiteContent = {
       live: PLACEHOLDER,
       caseStudy: {
         problem: PLACEHOLDER,
-        role: "Trained the model and configured the pitch detection package.",
-        features: ["Learn and practice guitar chords", "Pitch detection"],
+        role: "I trained the chord-detection model and set up the pitch-detection package.",
+        features: [
+          "Learn and practice guitar chords",
+          "Chord detection from the camera, on the device",
+          "Pitch detection from the microphone",
+        ],
         result: PLACEHOLDER,
         media: PLACEHOLDER,
         video: PLACEHOLDER,
@@ -283,7 +294,7 @@ const content: SiteContent = {
       title: "AmbatuHelp",
       tags: ["Data", "School"],
       description:
-        "A Flutter chatbot app powered by the ChatGPT API, with onboarding, profiles, and FAQ screens. I designed the app's UI/UX.",
+        "A Flutter chatbot app that answers questions through the ChatGPT API, with onboarding, profile and FAQ screens. I designed its UI/UX.",
       stack: ["Flutter", "Dart", "Tensorflow", "ChatGPT API"],
       image: "/projects/ambatuhelp.png",
       imageSize: { width: 1920, height: 1080 },
@@ -291,8 +302,11 @@ const content: SiteContent = {
       live: PLACEHOLDER,
       caseStudy: {
         problem: PLACEHOLDER,
-        role: "Created the UI/UX of the mobile application.",
-        features: ["Chatbot powered by the ChatGPT API"],
+        role: "I designed the app's UI/UX, from onboarding to the chat screen.",
+        features: [
+          "Chatbot powered by the ChatGPT API",
+          "Onboarding, profile and FAQ screens",
+        ],
         result: PLACEHOLDER,
         media: PLACEHOLDER,
         video: PLACEHOLDER,
@@ -329,7 +343,7 @@ const content: SiteContent = {
     },
   ],
   skillsNote:
-    "Some tools I'm still learning (NestJS, NextJS, PostgreSQL) already power SOLID in production.",
+    "I learn on the job: NestJS and NextJS are still on my learning list, and they already power SOLID, now in staging.",
 
   timeline: [
     {
@@ -338,7 +352,7 @@ const content: SiteContent = {
       title: "Junior Fullstack Developer",
       org: "Iloilo City Government",
       detail:
-        "Building a web-based system to digitalize and streamline manual internal processes within the city government, while learning from experienced teammates and developing reliable, user-friendly features based on organizational requirements.",
+        "Building web systems that replace slow, manual processes inside the city government. I turn what offices need into reliable, easy-to-use features, and learn from experienced teammates along the way.",
       current: true,
     },
     {
@@ -347,7 +361,7 @@ const content: SiteContent = {
       title: "Master in Information Technology · Year 1",
       org: "West Visayas State University",
       detail:
-        "Currently in my first year of graduate school, deepening my knowledge and preparing for thoughtful work in technology.",
+        "First year of graduate school, going deeper into the technology I build with every day.",
       current: true,
     },
     {
@@ -356,7 +370,7 @@ const content: SiteContent = {
       title: "Software Development Intern",
       org: "Warp Prometheus",
       detail:
-        "Contributed to development work in a team environment while building confidence with code reviews, debugging, and shipping improvements.",
+        "Worked on a development team, sharpening my skills in code reviews, debugging and shipping improvements.",
     },
     {
       when: "Completed",
@@ -368,8 +382,8 @@ const content: SiteContent = {
   ],
 
   contact: {
-    lede: "I'm open to junior roles, internships, mentorship, and kind conversations about the web.",
-    body: "Send a message straight to my inbox, or reach me through the links below.",
+    lede: "I'm open to junior developer roles, internships and mentorship. If you need a reliable web system built, let's talk.",
+    body: "Your message goes straight to my inbox, or you can reach me through the links below.",
   },
 
   socials: [
