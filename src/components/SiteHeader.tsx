@@ -90,7 +90,10 @@ export function SiteHeader({
       <div className="container header-inner">
         <a href="#home" className="brand">
           <span className="brand-mark" aria-hidden="true">
-            RPA
+            {/* RPA logo master: docs/brand/rpa-black.svg */}
+            <svg viewBox="0 0 256 256" width="22" height="22">
+              <path fill="currentColor" fillRule="evenodd" d="M26.53 220L93.5 36H163.5A66 66 0 0 1 163.5 168H141.54L160.47 220H124.29L105.36 168H81.64L62.71 220ZM117.31 70H163.5A32 32 0 0 1 163.5 134H94.01Z" />
+            </svg>
           </span>
           <span>{content.name}</span>
         </a>

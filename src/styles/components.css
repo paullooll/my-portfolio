@@ -185,9 +185,6 @@
   border-radius: 8px;
   background: var(--ink);
   color: var(--bg);
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: 500;
 }
 .nav ul {
   display: flex;
