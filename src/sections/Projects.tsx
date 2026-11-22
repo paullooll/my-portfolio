@@ -71,7 +71,7 @@ export function Projects() {
     <SectionFrame
       id="projects"
       title="Selected projects"
-      intro="Government systems, data work and school projects. Open any card for the case study."
+      intro="Government systems, data work, school and personal projects. Open any card for the case study."
     >
       <div className="filters" role="group" aria-label="Filter projects">
         {FILTERS.map(f => (
