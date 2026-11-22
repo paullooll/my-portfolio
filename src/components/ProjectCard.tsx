@@ -3,6 +3,7 @@ import { ArrowUpRight, Github, Lock } from "lucide-react";
 import { useTilt } from "@/motion/useTilt";
 import type { Project } from "@/content";
 import { ProjectMedia } from "./ProjectMedia";
+import { cardTags } from "@/lib/projects";
 
 /**
  * One project card. The title is a real <button> (keyboard + screen reader),
@@ -52,7 +53,7 @@ export function ProjectCard({
         </h3>
         <p className="muted project-desc">{p.description}</p>
         <ul className="chip-list" aria-label="Tags">
-          {p.tags.map(t => (
+          {cardTags(p).map(t => (
             <li key={t} className="chip">
               {t}
             </li>

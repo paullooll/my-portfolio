@@ -3,15 +3,11 @@ import type { Project, Tag } from "../content";
 export type Filter = Tag | "All";
 
 /** Filter buttons, in display order. */
-export const FILTERS: Filter[] = [
-  "All",
-  "Web",
-  "Data",
-  "Security",
-  "Work",
-  "School",
-  "Personal",
-];
+export const FILTERS: Filter[] = ["All", "Web System", "Mobile Application"];
+
+/** Tags shown on a card: who it was for, not the platform (that's a filter). */
+export const cardTags = (p: Project) =>
+  p.tags.filter(t => !FILTERS.includes(t));
 
 /**
  * Projects to show for a filter. "All" without `showAll` shows only the

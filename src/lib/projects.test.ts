@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import content from "../content";
 import {
+  cardTags,
   closeFocusTarget,
   filterProjects,
   projectIdFromHash,
@@ -12,11 +13,12 @@ const ids = (f: Parameters<typeof filterProjects>[1], showAll = true) =>
 
 describe("filterProjects", () => {
   it("filters by tag, keeping original order", () => {
-    expect(ids("Work")).toEqual(["solid"]);
-    expect(ids("Data")).toEqual(["chordefine", "ambatuhelp"]);
-    expect(ids("Security")).toEqual(["solid"]);
-    expect(ids("School")).toEqual(["chordefine", "ambatuhelp"]);
-    expect(ids("Personal")).toEqual(["kayaba"]);
+    expect(ids("Web System")).toEqual(["solid"]);
+    expect(ids("Mobile Application")).toEqual([
+      "chordefine",
+      "ambatuhelp",
+      "kayaba",
+    ]);
   });
   it("returns everything for All", () => {
     expect(ids("All")).toHaveLength(4);
@@ -25,7 +27,15 @@ describe("filterProjects", () => {
     expect(ids("All", false)).toEqual(["solid", "chordefine", "ambatuhelp"]);
   });
   it("ignores showAll for a tag filter", () => {
-    expect(ids("Data", false)).toHaveLength(2);
+    expect(ids("Mobile Application", false)).toHaveLength(3);
+  });
+  it("card tags drop the platform filters", () => {
+    expect(all.map(p => cardTags(p))).toEqual([
+      ["Work"],
+      ["School"],
+      ["School"],
+      ["Personal"],
+    ]);
   });
 });
 

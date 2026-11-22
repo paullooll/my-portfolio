@@ -20,7 +20,12 @@ export type SectionId =
   | "contact";
 
 /** Project filter tags. */
-export type Tag = "Web" | "Data" | "Security" | "Work" | "School" | "Personal";
+export type Tag =
+  | "Web System"
+  | "Mobile Application"
+  | "Work"
+  | "School"
+  | "Personal";
 
 export interface Project {
   id: string;
@@ -205,7 +210,7 @@ const content: SiteContent = {
       number: "01",
       type: "Web app · Government",
       title: "SOLID",
-      tags: ["Web", "Security", "Work"],
+      tags: ["Web System", "Work"],
       featured: true,
       description:
         "Turns the Iloilo City Government's manual warehouse process into one secure online system, where every supply is tracked from contract to issue. I connected it to the city's procurement system, secured it end to end, and built its core screens.",
@@ -244,7 +249,7 @@ const content: SiteContent = {
       number: "02",
       type: "Mobile app",
       title: "ChorDefine",
-      tags: ["Data", "School"],
+      tags: ["Mobile Application", "School"],
       featured: true,
       description:
         "My thesis: an Android app that coaches you through guitar chords. It watches your hand through the camera and listens through the mic, all on the phone, and tells you right away if the chord is right. I trained the chord-detection model and set up the pitch detection.",
@@ -283,7 +288,7 @@ const content: SiteContent = {
       number: "03",
       type: "Mobile app",
       title: "AmbatuHelp",
-      tags: ["Data", "School"],
+      tags: ["Mobile Application", "School"],
       featured: true,
       description:
         "A Flutter AI chatbot for students. Ask anything and the answer streams in from OpenAI, with formatted code, saved chats and light and dark themes. I designed its UI/UX.",
@@ -315,7 +320,7 @@ const content: SiteContent = {
       number: "04",
       type: "Mobile app · Personal",
       title: "KayaBa?",
-      tags: ["Personal"],
+      tags: ["Mobile Application", "Personal"],
       description:
         "“Kaya ba?” is Filipino for “Can I afford it?”. This Android app turns a price into the hours and days of work it costs you, and checks it against the wants share of your 50/30/20 budget. A solo personal project, still in development.",
       stack: [
@@ -374,7 +379,7 @@ const content: SiteContent = {
         "Firebase",
         "Antigravity",
         "OpenCode",
-        "Manus",
+        "Claude Code",
       ],
       learning: ["PostgreSQL", "MongoDB", "Google Colab"],
     },
