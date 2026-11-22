@@ -333,12 +333,12 @@ const content: SiteContent = {
       caseStudy: {
         problem:
           "A price tag doesn't tell you what a purchase really costs. It's easy to buy something without noticing it took a full day of work, or that it ate most of this month's spending money.",
-        role: "My own project: I'm designing and building it on my own, from the clay-style design system to the local database, sign-in and sync.",
+        role: "My own project: I'm designing and building it on my own, from the clay-style design system to the local database and sign-in.",
         features: [
           "Enter a price and see how many hours and days of work it costs",
           "Each item checked against the wants share of the 50/30/20 rule",
           "Wishlist you can sort by price or hours, plus a 50/30/20 budget chart",
-          "Works offline first, with Supabase sign-in, sync and row-level security",
+          "Works offline first: items stay on the phone, with Supabase sign-in and row-level security",
           "Light and dark themes in Filipino-flag colors, tested at 200% text size",
         ],
         result:

@@ -397,7 +397,7 @@ const scenes = [
     ctx.save(); ctx.translate(0, (1 - ex) * -60);
     eyebrow(t, 25.5, "04 · YOURS, EVERYWHERE", W / 2, 110, { align: "center", alpha: ex });
     words(t, 25.6, [["WISHLIST."], ["LIGHT"], ["OR", BLUE], ["DARK.", BLUE], ["OFFLINE."]], W / 2, 205, 68, { align: "center", alpha: ex });
-    const items = [["wishlist-dark", "Sort by price or hours"], ["home-light", "Light ↔ Dark"], ["login-dark", "Sign-in & sync"]];
+    const items = [["wishlist-dark", "Sort by price or hours"], ["home-light", "Light ↔ Dark"], ["login-dark", "Secure sign-in"]];
     items.forEach(([n, label], i) => {
       const st = 25.9 + i * 0.22;
       const p = outQuint(prog(t, st, st + 0.9));
@@ -417,7 +417,7 @@ const scenes = [
     words(t, 29.8, [["KAYA", INK], ["BA?", BLUE]], W / 2, 490, 140, { align: "center", stagger: 0.14, joined: true });
     chipRow(t, 30.3, ["Flutter", "Riverpod", "Drift", "Supabase", "fl_chart"], 600, 1);
     body(t, 30.9, "A personal project · In development, Android first", W / 2, 720, 34, 1600, { align: "center", color: INK });
-    body(t, 31.2, "Designed and built solo, from the clay design system to sign-in and sync.", W / 2, 775, 28, 1600, { align: "center" });
+    body(t, 31.2, "Designed and built solo, from the clay design system to the local database.", W / 2, 775, 28, 1600, { align: "center" });
   }],
 ];
 
