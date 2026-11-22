@@ -14,6 +14,19 @@
       "port": 4173
     },
     {
+      "name": "ambatu-web",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8765", "-d", "C:\\Users\\HP\\Documents\\Personal\\Projects\\cc206_chatbot_application\\build\\web"],
+      "port": 8765
+    },
+    {
+      "name": "ambatu-video",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["assets-src/ambatuhelp-video/server.cjs"],
+      "port": 4391,
+      "autoPort": false
+    },
+    {
       "name": "warehouse-api",
       "runtimeExecutable": "powershell",
       "runtimeArgs": ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "C:\\Users\\HP\\AppData\\Local\\Temp\\claude\\d3a25fb3bf42019f\\c5ab6d61-90e3-4c73-8a77-c7e2604296f1\\scratchpad\\run-warehouse-api.ps1"],
