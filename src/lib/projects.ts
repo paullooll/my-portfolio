@@ -10,6 +10,7 @@ export const FILTERS: Filter[] = [
   "Security",
   "Work",
   "School",
+  "Personal",
 ];
 
 /**

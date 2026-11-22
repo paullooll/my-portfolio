@@ -20,7 +20,7 @@ export type SectionId =
   | "contact";
 
 /** Project filter tags. */
-export type Tag = "Web" | "Data" | "Security" | "Work" | "School";
+export type Tag = "Web" | "Data" | "Security" | "Work" | "School" | "Personal";
 
 export interface Project {
   id: string;
@@ -142,7 +142,7 @@ const content: SiteContent = {
       id: "projects",
       plain: "Projects",
       game: "MISSIONS",
-      summary: "Government systems and school apps, each with a case study.",
+      summary: "Government systems, school apps and a personal project, each with a case study.",
     },
     {
       id: "skills",
@@ -308,6 +308,43 @@ const content: SiteContent = {
           "Submitted as our CC 206 final project, then rebuilt on current Flutter with Material 3 and streaming replies.",
         media: [],
         video: "/projects/ambatuhelp-demo.webm",
+      },
+    },
+    {
+      id: "kayaba",
+      number: "04",
+      type: "Mobile app · Personal",
+      title: "KayaBa?",
+      tags: ["Personal"],
+      description:
+        "“Kaya ba?” is Filipino for “Can I afford it?”. This Android app turns a price into the hours and days of work it costs you, and checks it against the wants share of your 50/30/20 budget. A solo personal project, still in development.",
+      stack: [
+        "Flutter",
+        "Dart",
+        "Riverpod",
+        "Drift (SQLite)",
+        "Supabase",
+        "fl_chart",
+      ],
+      image: "/projects/kayaba.png",
+      imageSize: { width: 1920, height: 1080 },
+      palette: { accent: "#0038A8", bg: "#FAF8F3" },
+      github: "https://github.com/paullooll/kayaba-mobile",
+      caseStudy: {
+        problem:
+          "A price tag doesn't tell you what a purchase really costs. It's easy to buy something without noticing it took a full day of work, or that it ate most of this month's spending money.",
+        role: "My own project: I'm designing and building it on my own, from the clay-style design system to the local database, sign-in and sync.",
+        features: [
+          "Enter a price and see how many hours and days of work it costs",
+          "Each item checked against the wants share of the 50/30/20 rule",
+          "Wishlist you can sort by price or hours, plus a 50/30/20 budget chart",
+          "Works offline first, with Supabase sign-in, sync and row-level security",
+          "Light and dark themes in Filipino-flag colors, tested at 200% text size",
+        ],
+        result:
+          "In development: the MVP is being built, Android first.",
+        media: [],
+        video: "/projects/kayaba-demo.webm",
       },
     },
   ],

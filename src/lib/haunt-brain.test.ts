@@ -19,6 +19,7 @@ describe("answer: routing", () => {
     ["Are you hiring-ready? can I hire him", "availability"],
     ["Tell me about SOLID", "project"],
     ["ambatuhelp?", "project"],
+    ["kayaba?", "project"],
     ["Does he know React?", "tech"],
     ["postgres experience", "tech"],
     ["How do I contact him?", "contact"],

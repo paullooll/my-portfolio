@@ -16,9 +16,10 @@ describe("filterProjects", () => {
     expect(ids("Data")).toEqual(["chordefine", "ambatuhelp"]);
     expect(ids("Security")).toEqual(["solid"]);
     expect(ids("School")).toEqual(["chordefine", "ambatuhelp"]);
+    expect(ids("Personal")).toEqual(["kayaba"]);
   });
   it("returns everything for All", () => {
-    expect(ids("All")).toHaveLength(3);
+    expect(ids("All")).toHaveLength(4);
   });
   it("shows only the 3 featured projects for All when collapsed", () => {
     expect(ids("All", false)).toEqual(["solid", "chordefine", "ambatuhelp"]);
@@ -31,6 +32,7 @@ describe("filterProjects", () => {
 describe("projectIdFromHash", () => {
   it("finds a known project", () => {
     expect(projectIdFromHash("#project-solid", all)).toBe("solid");
+    expect(projectIdFromHash("#project-kayaba", all)).toBe("kayaba");
   });
   it("ignores unknown or unrelated hashes", () => {
     expect(projectIdFromHash("#project-nope", all)).toBeNull();
