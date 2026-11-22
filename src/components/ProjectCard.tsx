@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import { ArrowUpRight, Github, Lock } from "lucide-react";
 import { useTilt } from "@/motion/useTilt";
 import type { Project } from "@/content";
@@ -18,7 +18,18 @@ export function ProjectCard({
   const ref = useRef<HTMLLIElement>(null);
   useTilt(ref);
   return (
-    <li ref={ref} className="project card" data-reveal>
+    <li
+      ref={ref}
+      className="project card"
+      data-reveal
+      style={
+        p.palette &&
+        ({
+          "--p-accent": p.palette.accent,
+          "--p-bg": p.palette.bg,
+        } as CSSProperties)
+      }
+    >
       <div className="project-media">
         <ProjectMedia project={p} />
         <span className="project-peek mono" aria-hidden="true">

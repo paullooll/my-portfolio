@@ -109,6 +109,12 @@
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
 }
+/* Frame each shot in its project's own colors; contain so nothing is cropped. */
+.project-media .shot {
+  object-fit: contain;
+  background: var(--p-bg, transparent);
+  border-color: color-mix(in srgb, var(--p-accent, var(--ink-muted)) 35%, transparent);
+}
 .project-body {
   display: grid;
   gap: 10px;

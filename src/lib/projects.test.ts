@@ -12,16 +12,16 @@ const ids = (f: Parameters<typeof filterProjects>[1], showAll = true) =>
 
 describe("filterProjects", () => {
   it("filters by tag, keeping original order", () => {
-    expect(ids("Work")).toEqual(["solid", "budget-tracker"]);
+    expect(ids("Work")).toEqual(["solid"]);
     expect(ids("Data")).toEqual(["chordefine", "ambatuhelp"]);
     expect(ids("Security")).toEqual(["solid"]);
     expect(ids("School")).toEqual(["chordefine", "ambatuhelp"]);
   });
   it("returns everything for All", () => {
-    expect(ids("All")).toHaveLength(4);
+    expect(ids("All")).toHaveLength(3);
   });
   it("shows only the 3 featured projects for All when collapsed", () => {
-    expect(ids("All", false)).toEqual(["solid", "budget-tracker", "chordefine"]);
+    expect(ids("All", false)).toEqual(["solid", "chordefine", "ambatuhelp"]);
   });
   it("ignores showAll for a tag filter", () => {
     expect(ids("Data", false)).toHaveLength(2);

@@ -408,7 +408,7 @@
   transition-duration: 0.2s, 0.2s, 0.08s;
   box-shadow:
     var(--shadow),
-    0 18px 40px -24px color-mix(in srgb, var(--accent) 45%, transparent);
+    0 18px 40px -24px color-mix(in srgb, var(--p-accent, var(--accent)) 55%, transparent);
 }
 .project-media {
   position: relative;
@@ -432,8 +432,9 @@
   gap: 6px;
   padding: 6px 12px;
   border-radius: 999px;
-  background: var(--accent);
-  color: var(--on-accent);
+  background: var(--p-accent, var(--accent));
+  /* Project bg as text: dark on SOLID green / Ambatu gold, light on ChorDefine orange. */
+  color: var(--p-bg, var(--on-accent));
   font-size: var(--text-xs);
   white-space: nowrap;
   opacity: 0;

@@ -18,7 +18,7 @@ describe("answer: routing", () => {
     ["Is he open to work?", "availability"],
     ["Are you hiring-ready? can I hire him", "availability"],
     ["Tell me about SOLID", "project"],
-    ["budget tracker?", "project"],
+    ["ambatuhelp?", "project"],
     ["Does he know React?", "tech"],
     ["postgres experience", "tech"],
     ["How do I contact him?", "contact"],
@@ -65,9 +65,6 @@ describe("answer: content", () => {
     expect(r.text).toContain("internal government system");
     expect(r.text).toContain("demo video runs on a copy with made-up data");
     expect(r.links?.[0].href).toBe("#project-solid");
-    expect(answer("budget tracker", content).text).toContain(
-      "no public screenshots"
-    );
   });
 
   it("links a public project's code", () => {

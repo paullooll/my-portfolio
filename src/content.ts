@@ -39,6 +39,8 @@ export interface Project {
   image?: string;
   /** Pixel size of the screenshot, used to reserve space and avoid layout shift. */
   imageSize?: { width: number; height: number };
+  /** The project's own colors, used to frame its card image. */
+  palette?: { accent: string; bg: string };
   github?: string;
   live?: Maybe<string>;
   /** Internal system: no live link, real URLs, names or data are shown. */
@@ -215,9 +217,10 @@ const content: SiteContent = {
         "TailwindCSS",
         "MySQL",
       ],
-      // Name card; also the demo video's poster.
+      // Cover (assets-src/covers); also the demo video's poster.
       image: "/projects/solid.png",
-      imageSize: { width: 1600, height: 1000 },
+      imageSize: { width: 1920, height: 1080 },
+      palette: { accent: "#3ddc84", bg: "#0b0b0b" },
       private: true,
       caseStudy: {
         problem:
@@ -237,32 +240,8 @@ const content: SiteContent = {
       },
     },
     {
-      id: "budget-tracker",
-      number: "02",
-      type: "Web app · Government",
-      title: "Budget Tracker",
-      tags: ["Web", "Work"],
-      featured: true,
-      description:
-        "Gives the City Budget Office one view of every department's budget, so nobody has to piece it together office by office. Staff add, edit and delete Program, Project and Activity (PPA) entries in one place.",
-      stack: ["React", "TypeScript", "Express", "TailwindCSS", "MySQL"],
-      private: true,
-      caseStudy: {
-        problem:
-          "The City Budget office needed one place to overview the budgets of all the departments.",
-        role: "I built the budget tracker as a web app, from the screens to the database behind them.",
-        features: [
-          "Every department's budget in one overview",
-          "Add, edit and delete Program, Project and Activity (PPA) entries",
-        ],
-        result: PLACEHOLDER,
-        media: PLACEHOLDER,
-        video: PLACEHOLDER,
-      },
-    },
-    {
       id: "chordefine",
-      number: "03",
+      number: "02",
       type: "Mobile app",
       title: "ChorDefine",
       tags: ["Data", "School"],
@@ -279,6 +258,7 @@ const content: SiteContent = {
       ],
       image: "/projects/chordefine.png",
       imageSize: { width: 1920, height: 1080 },
+      palette: { accent: "#c2410c", bg: "#fdf7f2" },
       github: "https://github.com/paullooll/ChorDefine",
       live: "https://drive.google.com/file/d/18RtMUydc3MUT07kaH0ouWyRk4P0o3NGk/view?usp=sharing",
       caseStudy: {
@@ -300,15 +280,17 @@ const content: SiteContent = {
     },
     {
       id: "ambatuhelp",
-      number: "04",
+      number: "03",
       type: "Mobile app",
       title: "AmbatuHelp",
       tags: ["Data", "School"],
+      featured: true,
       description:
         "A Flutter AI chatbot for students. Ask anything and the answer streams in from OpenAI, with formatted code, saved chats and light and dark themes. I designed its UI/UX.",
       stack: ["Flutter", "Dart", "Material 3", "OpenAI API"],
       image: "/projects/ambatuhelp.png",
       imageSize: { width: 1920, height: 1080 },
+      palette: { accent: "#c9a227", bg: "#1a160c" },
       github: "https://github.com/paullooll/AmbatuHelp",
       live: PLACEHOLDER,
       caseStudy: {
