@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- Project card covers (source of public/projects/<id>.png).
      Re-render: `node assets-src/covers/render.mjs` then `pnpm assets` for the .webp files.
-     Preview one: open index.html?p=solid | chordefine | ambatuhelp at 1600×900. -->
+     Preview one: open index.html?p=solid | chordefine | ambatuhelp | kayaba at 1600×900. -->
 <html>
 <head>
 <meta charset="utf-8">
@@ -82,6 +82,37 @@
   #ambatuhelp .typing { display: inline-flex; gap: 8px; }
   #ambatuhelp .typing i { width: 10px; height: 10px; border-radius: 50%; background: #e3c050; opacity: .5; }
   #ambatuhelp .typing i:nth-child(2) { opacity: .75; } #ambatuhelp .typing i:nth-child(3) { opacity: 1; }
+
+  /* ---------- KayaBa? ---------- */
+  @font-face { font-family: Cubao; src: url(CubaoFree2-Regular.ttf); }
+  @font-face { font-family: Barlow; font-weight: 500; src: url(Barlow-Medium.ttf); }
+  @font-face { font-family: Barlow; font-weight: 600; src: url(Barlow-SemiBold.ttf); }
+  #kayaba { background: #faf8f3; font-family: Barlow; color: #14213d; }
+  #kayaba .weave { inset: 0; background-image:
+      radial-gradient(circle at 50% 50%, #14213d0d 9px, transparent 10px);
+    background-size: 44px 28px;
+    mask-image: radial-gradient(ellipse 70% 80% at 72% 50%, #000 20%, transparent 75%); }
+  #kayaba .glow { width: 900px; height: 900px; right: -140px; top: 0; border-radius: 50%;
+    background: radial-gradient(circle, #fcd11640, transparent 60%); }
+  #kayaba .sun { right: 600px; top: 40px; }
+  #kayaba .copy { left: 120px; top: 0; bottom: 0; width: 720px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+  #kayaba .eyebrow { font: 600 22px Barlow; letter-spacing: .3em; color: #0038a8; }
+  #kayaba h1 { font: 400 132px/0.95 Cubao; letter-spacing: .01em; }
+  #kayaba h1 span { color: #0038a8; }
+  #kayaba .sub { font: 500 34px/1.3 Barlow; color: #14213db3; }
+  #kayaba .flow { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+  #kayaba .clay { border-radius: 28px; box-shadow: 8px 10px 0 #14213d1f, inset 0 2px 0 #ffffffcc, inset -4px -6px 14px #14213d14; }
+  #kayaba .flow .clay { font: 400 40px Cubao; padding: 16px 28px; }
+  #kayaba .price { background: #fff; }
+  #kayaba .hours { background: linear-gradient(135deg, #3b63c9, #0038a8); color: #faf8f3; }
+  #kayaba .arrow { font: 600 40px Barlow; color: #14213d80; }
+  #kayaba .phone { right: 200px; top: 64px; width: 372px; height: 800px; padding: 12px; border-radius: 58px; background: #14213d;
+    transform: rotate(7deg); box-shadow: 0 50px 80px #14213d40, 0 10px 20px #14213d30; }
+  #kayaba .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 46px; display: block; }
+  #kayaba .cost { right: 470px; top: 560px; width: 290px; padding: 26px 30px; background: linear-gradient(135deg, #fff4b8, #f5dd6a);
+    transform: rotate(-6deg); }
+  #kayaba .cost p { font: 500 20px Barlow; }
+  #kayaba .cost b { display: block; font: 400 64px/1.1 Cubao; margin: 6px 0 2px; }
 </style>
 </head>
 <body>
@@ -155,6 +186,21 @@
   </div>
 </section>
 
+<!-- KayaBa? -->
+<section class="cover" id="kayaba">
+  <div class="abs glow"></div>
+  <div class="abs weave"></div>
+  <svg class="abs sun" width="200" height="200" viewBox="-100 -100 200 200" id="sun"></svg>
+  <div class="abs phone"><img src="kayaba-screen.png" alt=""></div>
+  <div class="abs cost clay"><p>What it really costs</p><b>20.5 H</b><p>of work</p></div>
+  <div class="abs copy">
+    <p class="eyebrow">CAN I AFFORD IT?</p>
+    <h1>Kaya<span>Ba?</span></h1>
+    <p class="sub">See any price as the hours and days of work it costs you.</p>
+    <div class="flow"><span class="clay price">₱3,500</span><span class="arrow">→</span><span class="clay hours">20.5 H</span></div>
+  </div>
+</section>
+
 <script>
 const p = new URLSearchParams(location.search).get("p") || "solid";
 document.getElementById(p).classList.add("on");
@@ -202,6 +248,16 @@ document.getElementById(p).classList.add("on");
     l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("y1", 45 - hh / 2); l.setAttribute("y2", 45 + hh / 2);
     l.setAttribute("stroke-opacity", .35 + (hh / 78) * .65); g.appendChild(l);
   });
+}
+
+// KayaBa?: the eight-ray Philippine sun, drawn like the app's.
+{
+  const svg = document.getElementById("sun");
+  if (svg) {
+    let rays = "";
+    for (let i = 0; i < 8; i++) rays += `<g transform="rotate(${i * 45})"><polygon points="0,-96 9,-40 -9,-40" fill="#fcd116"/><polygon points="-14,-82 -4,-42 -18,-38" fill="#fcd116" opacity=".8"/><polygon points="14,-82 18,-38 4,-42" fill="#fcd116" opacity=".8"/></g>`;
+    svg.innerHTML = rays + `<circle r="40" fill="#fcd116"/><circle r="22" fill="#fde77a"/>`;
+  }
 }
 </script>
 </body>
