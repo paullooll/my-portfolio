@@ -1,0 +1,264 @@
+<!doctype html>
+<!-- Project card covers (source of public/projects/<id>.png).
+     Re-render: `node assets-src/covers/render.mjs` then `pnpm assets` for the .webp files.
+     Preview one: open index.html?p=solid | chordefine | ambatuhelp | kayaba at 1600×900. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Project covers</title>
+<style>
+  @font-face { font-family: Plex; font-weight: 400; src: url(../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2); }
+  @font-face { font-family: Plex; font-weight: 700; src: url(../../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-700-normal.woff2); }
+  @font-face { font-family: PlexMono; font-weight: 500; src: url(../../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2); }
+  @font-face { font-family: Poppins; font-weight: 500; src: url(Poppins-Medium.ttf); }
+  @font-face { font-family: Poppins; font-weight: 600; src: url(Poppins-SemiBold.ttf); }
+  @font-face { font-family: Poppins; font-weight: 700; src: url(Poppins-Bold.ttf); }
+
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 1600px; height: 900px; overflow: hidden; }
+  .cover { position: relative; width: 1600px; height: 900px; overflow: hidden; display: none; }
+  .cover.on { display: block; }
+  .abs { position: absolute; }
+
+  /* ---------- SOLID ---------- */
+  #solid { background: #0b0b0b; font-family: Plex; color: #ececee; }
+  #solid .grid { inset: 0; background-image:
+      linear-gradient(#ffffff0c 1px, transparent 1px), linear-gradient(90deg, #ffffff0c 1px, transparent 1px);
+    background-size: 64px 64px;
+    mask-image: radial-gradient(ellipse 80% 90% at 70% 55%, #000 30%, transparent 80%); }
+  #solid .glow { width: 900px; height: 900px; right: -180px; top: 40px; border-radius: 50%;
+    background: radial-gradient(circle, #3ddc8426, transparent 62%); }
+  #solid .copy { left: 120px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+  #solid .pill { align-self: flex-start; font: 500 22px PlexMono; letter-spacing: .12em; color: #3ddc84;
+    border: 1.5px solid #3ddc8466; background: #3ddc8414; padding: 10px 22px; border-radius: 999px; }
+  #solid h1 { font-weight: 700; font-size: 230px; line-height: .82; letter-spacing: -.02em; }
+  #solid h1 span { color: #3ddc84; }
+  #solid .sub { font-size: 30px; color: #a4a4ab; max-width: 760px; line-height: 1.35; }
+  #solid .flow { display: flex; align-items: center; gap: 14px; font: 500 18px PlexMono; color: #8b8b92; letter-spacing: .06em; }
+  #solid .flow b { width: 10px; height: 10px; border-radius: 50%; background: #3ddc84; box-shadow: 0 0 14px #3ddc84; }
+  #solid .flow i { width: 46px; height: 1.5px; background: linear-gradient(90deg, #3ddc84aa, #3ddc8422); }
+  #solid svg { right: 60px; top: 110px; }
+
+  /* ---------- ChorDefine ---------- */
+  #chordefine { background: #fdf7f2; font-family: Poppins; color: #1d1b19; }
+  #chordefine .blob { width: 1000px; height: 1000px; right: -260px; top: -120px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #f07a1e33, #c2410c14 55%, transparent 70%); }
+  #chordefine .frets { right: 0; top: 0; }
+  #chordefine .copy { left: 120px; top: 0; bottom: 0; width: 720px; display: flex; flex-direction: column; justify-content: center; gap: 22px; }
+  #chordefine .logo { width: 250px; height: 250px; margin: -50px 0 -40px -52px; filter: drop-shadow(0 14px 22px #c2410c33); }
+  #chordefine h1 { font-weight: 700; font-size: 112px; letter-spacing: -.02em; line-height: 1; }
+  #chordefine h1 span { color: #c2410c; }
+  #chordefine .sub { font: 500 32px/1.35 Poppins; color: #6b625b; }
+  #chordefine .chips { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  #chordefine .chips span { font: 600 19px Poppins; color: #c2410c; background: #fff; border: 1.5px solid #c2410c33;
+    padding: 9px 20px; border-radius: 999px; box-shadow: 0 4px 12px #c2410c12; }
+  #chordefine .phone { width: 380px; right: 230px; top: 92px; transform: rotate(9deg);
+    filter: drop-shadow(0 40px 50px #7a2a0640) drop-shadow(0 8px 14px #7a2a0630); }
+  #chordefine .card { right: 70px; top: 470px; width: 230px; padding: 20px 22px 18px; background: #fff; border-radius: 22px;
+    box-shadow: 0 24px 50px #7a2a0626; transform: rotate(-6deg); }
+  #chordefine .card p { font: 600 17px Poppins; color: #6b625b; display: flex; justify-content: space-between; }
+  #chordefine .card p b { color: #1d1b19; font-size: 30px; line-height: 1; }
+  #chordefine .ok { color: #14a866; }
+  #chordefine .wave { left: 112px; top: 745px; }
+
+  /* ---------- AmbatuHelp ---------- */
+  #ambatuhelp { background: radial-gradient(ellipse 70% 90% at 72% 50%, #3a2e12, #1a160c 55%, #0e0b05); font-family: Poppins; color: #f6efdc; }
+  #ambatuhelp .dots { inset: 0; background-image: radial-gradient(#c9a22722 1.5px, transparent 1.5px); background-size: 36px 36px;
+    mask-image: radial-gradient(ellipse 60% 70% at 70% 50%, #000, transparent 75%); }
+  #ambatuhelp .copy { left: 120px; top: 0; bottom: 0; width: 760px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+  #ambatuhelp .mark { width: 150px; height: 150px; border-radius: 50%; background: #fffaf0 url(ambatu-logo.png) 46% 50%/92% no-repeat;
+    box-shadow: 0 0 0 6px #c9a22755, 0 0 60px #c9a22788, 0 0 140px #c9a22744; }
+  #ambatuhelp h1 { font-weight: 700; font-size: 112px; line-height: 1; letter-spacing: -.02em; }
+  #ambatuhelp h1 span { color: #e3c050; }
+  #ambatuhelp .sub { font: 500 32px/1.35 Poppins; color: #bfb498; }
+  #ambatuhelp .eyebrow { font: 600 20px Poppins; letter-spacing: .4em; color: #e3c050; }
+  #ambatuhelp .phone { right: 200px; top: 70px; width: 372px; height: 790px; padding: 14px; border-radius: 58px; background: #0b0905;
+    border: 2px solid #4a3c18; transform: rotate(-8deg);
+    box-shadow: 0 0 0 1px #000, 0 50px 80px #000a, 0 0 120px #c9a22740; }
+  #ambatuhelp .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 44px; display: block; }
+  #ambatuhelp .bubble { padding: 18px 26px; border-radius: 28px; font: 500 22px Poppins; box-shadow: 0 20px 40px #0008; }
+  #ambatuhelp .b1 { right: 520px; top: 150px; background: #f5df85; color: #3a2e12; border-bottom-right-radius: 8px; transform: rotate(-4deg); }
+  #ambatuhelp .b2 { right: 70px; top: 560px; background: #2b2412; color: #f6efdc; border: 1.5px solid #c9a22755; border-bottom-left-radius: 8px; transform: rotate(5deg); }
+  #ambatuhelp .typing { display: inline-flex; gap: 8px; }
+  #ambatuhelp .typing i { width: 10px; height: 10px; border-radius: 50%; background: #e3c050; opacity: .5; }
+  #ambatuhelp .typing i:nth-child(2) { opacity: .75; } #ambatuhelp .typing i:nth-child(3) { opacity: 1; }
+
+  /* ---------- KayaBa? ---------- */
+  @font-face { font-family: Cubao; src: url(CubaoFree2-Regular.ttf); }
+  @font-face { font-family: Barlow; font-weight: 500; src: url(Barlow-Medium.ttf); }
+  @font-face { font-family: Barlow; font-weight: 600; src: url(Barlow-SemiBold.ttf); }
+  #kayaba { background: #faf8f3; font-family: Barlow; color: #14213d; }
+  #kayaba .weave { inset: 0; background-image:
+      radial-gradient(circle at 50% 50%, #14213d0d 9px, transparent 10px);
+    background-size: 44px 28px;
+    mask-image: radial-gradient(ellipse 70% 80% at 72% 50%, #000 20%, transparent 75%); }
+  #kayaba .glow { width: 900px; height: 900px; right: -140px; top: 0; border-radius: 50%;
+    background: radial-gradient(circle, #fcd11640, transparent 60%); }
+  #kayaba .sun { right: 600px; top: 40px; }
+  #kayaba .copy { left: 120px; top: 0; bottom: 0; width: 720px; display: flex; flex-direction: column; justify-content: center; gap: 26px; }
+  #kayaba .eyebrow { font: 600 22px Barlow; letter-spacing: .3em; color: #0038a8; }
+  #kayaba h1 { font: 400 132px/0.95 Cubao; letter-spacing: .01em; }
+  #kayaba h1 span { color: #0038a8; }
+  #kayaba .sub { font: 500 34px/1.3 Barlow; color: #14213db3; }
+  #kayaba .flow { display: flex; align-items: center; gap: 16px; margin-top: 6px; }
+  #kayaba .clay { border-radius: 28px; box-shadow: 8px 10px 0 #14213d1f, inset 0 2px 0 #ffffffcc, inset -4px -6px 14px #14213d14; }
+  #kayaba .flow .clay { font: 400 40px Cubao; padding: 16px 28px; }
+  #kayaba .price { background: #fff; }
+  #kayaba .hours { background: linear-gradient(135deg, #3b63c9, #0038a8); color: #faf8f3; }
+  #kayaba .arrow { font: 600 40px Barlow; color: #14213d80; }
+  #kayaba .phone { right: 200px; top: 64px; width: 372px; height: 800px; padding: 12px; border-radius: 58px; background: #14213d;
+    transform: rotate(7deg); box-shadow: 0 50px 80px #14213d40, 0 10px 20px #14213d30; }
+  #kayaba .phone img { width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 46px; display: block; }
+  #kayaba .cost { right: 470px; top: 560px; width: 290px; padding: 26px 30px; background: linear-gradient(135deg, #fff4b8, #f5dd6a);
+    transform: rotate(-6deg); }
+  #kayaba .cost p { font: 500 20px Barlow; }
+  #kayaba .cost b { display: block; font: 400 64px/1.1 Cubao; margin: 6px 0 2px; }
+</style>
+</head>
+<body>
+
+<!-- SOLID -->
+<section class="cover" id="solid">
+  <div class="abs grid"></div>
+  <div class="abs glow"></div>
+  <svg class="abs" id="iso" width="760" height="680" viewBox="0 0 760 680"></svg>
+  <div class="abs copy">
+    <span class="pill">WEB APP · WAREHOUSE &amp; INVENTORY</span>
+    <h1>SOLID<span>.</span></h1>
+    <p class="sub">Supply Operational Logistics &amp; Inventory Database</p>
+    <div class="flow"><b></b>CONTRACT<i></i><b></b>INVENTORY<i></i><b></b>ISSUED</div>
+  </div>
+</section>
+
+<!-- ChorDefine -->
+<section class="cover" id="chordefine">
+  <div class="abs blob"></div>
+  <svg class="abs frets" width="1000" height="900" viewBox="0 0 1000 900">
+    <g stroke="#c2410c" fill="none">
+      <!-- strings -->
+      <g stroke-opacity=".16" transform="rotate(-18 500 450)">
+        <line x1="-200" y1="300" x2="1300" y2="300" stroke-width="1.5"/><line x1="-200" y1="360" x2="1300" y2="360" stroke-width="2"/>
+        <line x1="-200" y1="420" x2="1300" y2="420" stroke-width="2.5"/><line x1="-200" y1="480" x2="1300" y2="480" stroke-width="3"/>
+        <line x1="-200" y1="540" x2="1300" y2="540" stroke-width="3.5"/><line x1="-200" y1="600" x2="1300" y2="600" stroke-width="4"/>
+      </g>
+      <g stroke-opacity=".1" stroke-width="5" transform="rotate(-18 500 450)">
+        <line x1="80" y1="270" x2="80" y2="630"/><line x1="300" y1="270" x2="300" y2="630"/>
+        <line x1="500" y1="270" x2="500" y2="630"/><line x1="680" y1="270" x2="680" y2="630"/><line x1="840" y1="270" x2="840" y2="630"/>
+      </g>
+    </g>
+  </svg>
+  <img class="abs phone" src="chordefine-phone.png" alt="">
+  <div class="abs card">
+    <p><span>Chord</span><span class="ok">✓ correct</span></p>
+    <svg width="186" height="150" viewBox="0 0 186 150" style="margin-top:10px">
+      <g stroke="#1d1b19" stroke-width="2" fill="none">
+        <line x1="18" y1="14" x2="168" y2="14" stroke-width="6"/>
+        <line x1="18" y1="44" x2="168" y2="44"/><line x1="18" y1="78" x2="168" y2="78"/><line x1="18" y1="112" x2="168" y2="112"/><line x1="18" y1="146" x2="168" y2="146"/>
+        <line x1="18" y1="14" x2="18" y2="146"/><line x1="48" y1="14" x2="48" y2="146"/><line x1="78" y1="14" x2="78" y2="146"/>
+        <line x1="108" y1="14" x2="108" y2="146"/><line x1="138" y1="14" x2="138" y2="146"/><line x1="168" y1="14" x2="168" y2="146"/>
+      </g>
+      <g fill="#c2410c"><circle cx="78" cy="61" r="11"/><circle cx="108" cy="61" r="11"/><circle cx="138" cy="61" r="11"/></g>
+    </svg>
+    <p style="margin-top:6px"><b>A</b><span>major</span></p>
+  </div>
+  <svg class="abs wave" width="300" height="90" viewBox="0 0 300 90">
+    <g stroke="#c2410c" stroke-width="6" stroke-linecap="round" id="wave"></g>
+  </svg>
+  <div class="abs copy">
+    <img class="logo" src="chordefine-logo.png" alt="">
+    <h1>Chor<span>Define</span></h1>
+    <p class="sub">Your pocket guitar coach. It sees your fingers and hears every chord.</p>
+    <div class="chips"><span>Camera chord detection</span><span>Pitch check</span><span>Works offline</span></div>
+  </div>
+</section>
+
+<!-- AmbatuHelp -->
+<section class="cover" id="ambatuhelp">
+  <div class="abs dots"></div>
+  <div class="abs phone"><img src="ambatu-screen.png" alt=""></div>
+  <div class="abs bubble b1">✦ Plan my study week</div>
+  <div class="abs bubble b2"><span class="typing"><i></i><i></i><i></i></span></div>
+  <div class="abs copy">
+    <div class="mark"></div>
+    <p class="eyebrow">MEET AMBATU</p>
+    <h1>Ambatu<span>.help</span></h1>
+    <p class="sub">A friendly AI study buddy. Answers stream in, code included.</p>
+  </div>
+</section>
+
+<!-- KayaBa? -->
+<section class="cover" id="kayaba">
+  <div class="abs glow"></div>
+  <div class="abs weave"></div>
+  <svg class="abs sun" width="200" height="200" viewBox="-100 -100 200 200" id="sun"></svg>
+  <div class="abs phone"><img src="kayaba-screen.png" alt=""></div>
+  <div class="abs cost clay"><p>What it really costs</p><b>20.5 H</b><p>of work</p></div>
+  <div class="abs copy">
+    <p class="eyebrow">CAN I AFFORD IT?</p>
+    <h1>Kaya<span>Ba?</span></h1>
+    <p class="sub">See any price as the hours and days of work it costs you.</p>
+    <div class="flow"><span class="clay price">₱3,500</span><span class="arrow">→</span><span class="clay hours">20.5 H</span></div>
+  </div>
+</section>
+
+<script>
+const p = new URLSearchParams(location.search).get("p") || "solid";
+document.getElementById(p).classList.add("on");
+
+// SOLID: isometric stacks of supply boxes on a floor grid.
+{
+  const svg = document.getElementById("iso"), ns = "http://www.w3.org/2000/svg";
+  const S = 44, ox = 380, oy = 250; // cube edge, origin
+  const iso = (x, y, z) => [ox + (x - y) * S * 0.866, oy + (x + y) * S * 0.5 - z * S];
+  const poly = (pts, attrs) => { const e = document.createElementNS(ns, "polygon");
+    e.setAttribute("points", pts.map(p => p.join(",")).join(" ")); for (const k in attrs) e.setAttribute(k, attrs[k]); svg.appendChild(e); };
+  // floor
+  for (let i = -1; i <= 7; i++) for (const [a, b] of [[[i, -1, 0], [i, 7, 0]], [[-1, i, 0], [7, i, 0]]]) {
+    const l = document.createElementNS(ns, "line"), [x1, y1] = iso(...a), [x2, y2] = iso(...b);
+    Object.entries({ x1, y1, x2, y2, stroke: "#3ddc84", "stroke-opacity": .12, "stroke-width": 1 }).forEach(([k, v]) => l.setAttribute(k, v));
+    svg.appendChild(l);
+  }
+  // heights per (x,y) cell: a warehouse rack layout
+  const h = [[3,3,2,0,1,0],[3,4,2,0,2,1],[2,3,1,0,1,1],[0,0,0,0,0,0],[2,2,3,0,1,0],[1,2,2,0,0,0]];
+  const cells = [];
+  h.forEach((row, x) => row.forEach((n, y) => { for (let z = 0; z < n; z++) cells.push([x, y, z]); }));
+  cells.sort((a, b) => a[0] + a[1] - (b[0] + b[1]) || a[2] - b[2]);
+  const hot = "1,1,3"; // one highlighted box: the one being issued
+  for (const [x, y, z] of cells) {
+    const k = `${x},${y},${z}`, lit = k === hot;
+    const st = { stroke: "#3ddc84", "stroke-width": lit ? 2.2 : 1.4, "stroke-linejoin": "round" };
+    poly([iso(x, y, z + 1), iso(x + 1, y, z + 1), iso(x + 1, y + 1, z + 1), iso(x, y + 1, z + 1)], { ...st, fill: lit ? "#3ddc84" : "#123a25" });
+    poly([iso(x, y + 1, z + 1), iso(x + 1, y + 1, z + 1), iso(x + 1, y + 1, z), iso(x, y + 1, z)], { ...st, fill: lit ? "#2bb56a" : "#0e2a1b" });
+    poly([iso(x + 1, y, z + 1), iso(x + 1, y + 1, z + 1), iso(x + 1, y + 1, z), iso(x + 1, y, z)], { ...st, fill: lit ? "#1f8a50" : "#0b1f15" });
+  }
+  // label tag on the highlighted box
+  const [tx, ty] = iso(1.5, 1.5, 4.6);
+  const g = document.createElementNS(ns, "g"); g.innerHTML =
+    `<line x1="${tx}" y1="${ty + 34}" x2="${tx}" y2="${ty + 10}" stroke="#3ddc84" stroke-width="1.5"/>
+     <rect x="${tx - 92}" y="${ty - 34}" width="184" height="44" rx="10" fill="#0b0b0b" stroke="#3ddc84" stroke-width="1.5"/>
+     <text x="${tx}" y="${ty - 5}" fill="#3ddc84" font-family="PlexMono" font-size="18" text-anchor="middle" letter-spacing="1.5">RIS · ISSUED</text>`;
+  svg.appendChild(g);
+}
+
+// ChorDefine: a small sound-wave of rounded bars.
+{
+  const g = document.getElementById("wave"), ns = "http://www.w3.org/2000/svg";
+  [10, 26, 44, 30, 60, 78, 52, 34, 66, 40, 22, 48, 28, 14].forEach((hh, i) => {
+    const l = document.createElementNS(ns, "line"), x = 10 + i * 21;
+    l.setAttribute("x1", x); l.setAttribute("x2", x); l.setAttribute("y1", 45 - hh / 2); l.setAttribute("y2", 45 + hh / 2);
+    l.setAttribute("stroke-opacity", .35 + (hh / 78) * .65); g.appendChild(l);
+  });
+}
+
+// KayaBa?: the eight-ray Philippine sun, drawn like the app's.
+{
+  const svg = document.getElementById("sun");
+  if (svg) {
+    let rays = "";
+    for (let i = 0; i < 8; i++) rays += `<g transform="rotate(${i * 45})"><polygon points="0,-96 9,-40 -9,-40" fill="#fcd116"/><polygon points="-14,-82 -4,-42 -18,-38" fill="#fcd116" opacity=".8"/><polygon points="14,-82 18,-38 4,-42" fill="#fcd116" opacity=".8"/></g>`;
+    svg.innerHTML = rays + `<circle r="40" fill="#fcd116"/><circle r="22" fill="#fde77a"/>`;
+  }
+}
+</script>
+</body>
+</html>

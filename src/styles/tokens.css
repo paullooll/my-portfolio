@@ -1,0 +1,80 @@
+/* Design tokens — "Signal": monochrome, generous space, one mint accent used
+   only for live/active things (status dots, active filter, links, primary CTA).
+   Dark is the default; light mirrors it. Contrast pairs are enforced by
+   src/lib/contrast.test.ts. */
+:root {
+  --bg: #fafafa;
+  --surface: #ffffff;
+  --surface-2: #f4f4f5;
+  --line: #e4e4e7;
+  --ink: #0a0a0b;
+  --ink-muted: #52525b;
+  --accent: #0b7a4b;
+  --accent-soft: rgba(11, 122, 75, 0.1);
+  --on-accent: #ffffff;
+  --warn: #8f5200;
+  --danger: #b3122e;
+  --shadow-sm: 0 1px 2px rgba(10, 10, 11, 0.05);
+  --shadow:
+    0 1px 2px rgba(10, 10, 11, 0.04), 0 12px 32px -16px rgba(10, 10, 11, 0.18);
+
+  /* Haunt (mascot + easter-egg world). */
+  --haunt-body: #ffffff;
+  --haunt-outline: #0a0a0b;
+  --haunt-mouth: #0a0a0b;
+  --haunt-teeth: #ffffff;
+
+  --font-sans:
+    "IBM Plex Sans", "Plex Fallback", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  /* Only the hidden world uses these. */
+  --font-display: "Press Start 2P", "Pixel Fallback", ui-monospace, monospace;
+  --font-hud: "VT323", ui-monospace, monospace;
+
+  /* Type scale: every font-size uses one of these. 13px is the floor for
+     legibility (chips, tags, labels). */
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.2rem;
+  --text-xl: 1.5rem;
+  --text-lede: clamp(1.1rem, 2.4vw, 1.35rem);
+  --text-h2: clamp(1.6rem, 3.2vw, 2.1rem);
+  --text-display: clamp(2.4rem, 8vw, 4.5rem);
+
+  --radius: 16px;
+  --radius-sm: 10px;
+  --header-h: 64px;
+  --max-w: 1080px;
+  --gutter: clamp(16px, 4vw, 32px);
+  /* Effects layer (src/styles/fx.css). */
+  --fx-grid-line: rgba(10, 10, 11, 0.045);
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0a0a0b;
+  --surface: #121214;
+  --surface-2: #18181b;
+  --line: #26262b;
+  --ink: #ededef;
+  --ink-muted: #a1a1aa;
+  --accent: #3ddc97;
+  --accent-soft: rgba(61, 220, 151, 0.12);
+  --on-accent: #0a0a0b;
+  --warn: #f5b84a;
+  --danger: #ff6b7a;
+  --shadow-sm: 0 1px 0 rgba(255, 255, 255, 0.03) inset;
+  --shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 16px 40px -20px rgba(0, 0, 0, 0.7);
+
+  --haunt-body: #ededef;
+  --haunt-outline: #52525b;
+  --haunt-mouth: #0a0a0b;
+  --haunt-teeth: #ffffff;
+  --fx-grid-line: rgba(255, 255, 255, 0.035);
+  color-scheme: dark;
+}

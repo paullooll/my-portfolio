@@ -1,0 +1,6 @@
+[["seed","light"],["shot","login"],["click",206,626],["wait",1200],["shot","chat-empty"],
+ ["click",28,28],["wait",900],["shot","drawer"],["click",136,152],["wait",1200],["shot","chat"],
+ ["seed","light"],["click",206,626],["wait",1200],["click",392,28],["wait",700],["click",310,40],["wait",1200],["shot","profile"],
+ ["seed","light"],["click",206,626],["wait",1200],["click",392,28],["wait",700],["click",310,88],["wait",1200],["shot","settings"],
+ ["seed","light"],["click",206,626],["wait",1200],["click",392,28],["wait",700],["click",310,136],["wait",1200],["shot","faq"],
+ ["seed","dark"],["shot","login-dark"],["click",206,626],["wait",1200],["shot","chat-empty-dark"],["click",28,28],["wait",900],["click",136,152],["wait",1200],["shot","chat-dark"]]

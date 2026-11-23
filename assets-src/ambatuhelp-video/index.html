@@ -1,0 +1,598 @@
+<!doctype html>
+<!-- Ambatu.help demo video renderer (source of public/projects/ambatuhelp-demo.webm).
+     Re-render: serve the app's Flutter web build (`flutter build web` in cc206_chatbot_application,
+     then `python -m http.server 8765 -d build/web`), run `node capture.mjs http://127.0.0.1:8765/ steps.json`
+     (real screens into screens/, chats seeded from seed.json), copy logo.png from the app and
+     Poppins-*.ttf from the ChorDefine repo here, run `node ../tts/gen.mjs af_heart voice lines.mjs`
+     (needs kokoro-js@1.2.1 next to gen.mjs), `node server.cjs`, open http://localhost:4391 and run
+     `await render()` in the console; output lands in out/. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>Ambatu.help promo renderer</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { width: 100vw; height: auto; display: block; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.3/build/webm-muxer.js"></script>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080, FPS = 30, DURATION = 34;
+// Narration timing (voice/timing.json): scene [bounds[i], bounds[i+1]] is stretched to
+// [newBounds[i], newBounds[i+1]] so its voice line fits. OUT = final video length.
+let timing = null, OUT = DURATION;
+function seg(x, from, to) {
+  let i = 0;
+  while (i < from.length - 2 && x > from[i + 1]) i++;
+  return to[i] + ((x - from[i]) * (to[i + 1] - to[i])) / (from[i + 1] - from[i]);
+}
+const warp = T => (timing ? seg(T, timing.newBounds, timing.bounds) : T);
+const unwarp = t => (timing ? seg(t, timing.bounds, timing.newBounds) : t);
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+
+// ---------- palette (from the app's own Material 3 scheme, seed #867303) ----------
+const BG = "#15130B", GOLD = "#F8E288", DEEP = "#C9A934", INK = "#F6F1E4", MUTED = "#A39E8C", CARD = "#2A2719";
+const LIGHT_BG = "rgb(255,249,237)", FIELD = "rgb(238,232,218)", BUBBLE = "rgb(238,232,218)";
+
+// ---------- easing ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outCubic = x => 1 - Math.pow(1 - x, 3);
+const outQuint = x => 1 - Math.pow(1 - x, 5);
+const inOutCubic = x => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const outBack = x => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+
+// ---------- assets: real screens captured from the Flutter web build (1030×2230) ----------
+const img = {};
+const names = ["login", "chat-empty", "drawer", "chat", "profile", "settings", "faq", "login-dark", "chat-empty-dark", "chat-dark"];
+const loadImg = (n, src) => new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok((img[n] = i)); i.onerror = bad; i.src = src; });
+async function loadAll() {
+  const fonts = [["Poppins-Medium.ttf", 500], ["Poppins-SemiBold.ttf", 600], ["Poppins-Bold.ttf", 700]];
+  await Promise.all(fonts.map(async ([f, w]) => document.fonts.add(await new FontFace("Poppins", `url(${f})`, { weight: String(w) }).load())));
+  await Promise.all([loadImg("logo", "logo.png"), ...names.map(n => loadImg(n, `screens/${n}.png`))]);
+  timing = await (await fetch("voice/timing.json")).json();
+  OUT = timing.newBounds.at(-1);
+}
+
+// ---------- helpers ----------
+const font = (size, weight = 600) => `${weight} ${size}px Poppins`;
+
+// drifting chat bubbles: the video's background motif
+const motes = Array.from({ length: 14 }, (_, i) => {
+  let s = (i + 1) * 9301 + 49297;
+  const r = () => ((s = (s * 233280 + 49297) % 1e6) / 1e6);
+  return { x: r() * W, y: r() * H, w: 60 + r() * 120, sp: 8 + r() * 16, ph: r() * 6, left: r() > 0.5 };
+});
+function background(t) {
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  const glow = (x, y, r, col, a) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  };
+  glow(W * 0.7 + Math.sin(t * 0.33) * 170, H * 0.35 + Math.cos(t * 0.25) * 90, 950, "248,226,136", 0.11);
+  glow(W * 0.18 + Math.cos(t * 0.21) * 140, H * 0.88, 800, "201,169,52", 0.07);
+  for (const m of motes) {
+    const y = ((m.y - t * m.sp) % (H + 200) + H + 200) % (H + 200) - 100;
+    const x = m.x + Math.sin(t * 0.4 + m.ph) * 30, h = m.w * 0.5;
+    ctx.save(); ctx.globalAlpha = 0.045; ctx.fillStyle = GOLD;
+    ctx.beginPath(); ctx.roundRect(x, y, m.w, h, [h / 2, h / 2, m.left ? h / 2 : 4, m.left ? 4 : h / 2]); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function finish(T) {
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.35, W / 2, H / 2, H * 1.05);
+  v.addColorStop(0, "rgba(0,0,0,0)"); v.addColorStop(1, "rgba(0,0,0,0.55)");
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  if (showBar) {
+    ctx.fillStyle = "rgba(255,255,255,0.07)"; ctx.fillRect(0, H - 4, W, 4);
+    ctx.fillStyle = GOLD; ctx.fillRect(0, H - 4, W * (T / OUT), 4);
+  }
+  const fade = Math.max(1 - prog(T, 0, 0.5), prog(T, OUT - 0.7, OUT));
+  if (fade > 0) { ctx.fillStyle = `rgba(0,0,0,${fade})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// A phone: dark bezel + real screen. `over(k)` draws on top in screen-pixel coordinates.
+function device(name, cx, cy, h, { rot = 0, alpha = 1, glow = 0.3, scale = 1, over = null } = {}) {
+  const im = img[name]; if (!im || alpha <= 0) return null;
+  const hh = h * scale, sh = hh * 0.955, sw = sh * (im.width / im.height), bez = hh * 0.0225, ww = sw + bez * 2;
+  const k = sh / im.height;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.shadowColor = `rgba(248,226,136,${glow})`; ctx.shadowBlur = 80;
+  ctx.fillStyle = "#0B0A06";
+  ctx.beginPath(); ctx.roundRect(-ww / 2, -hh / 2, ww, hh, hh * 0.07); ctx.fill();
+  ctx.shadowColor = "rgba(0,0,0,0.65)"; ctx.shadowBlur = 60; ctx.shadowOffsetY = 34; ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.roundRect(-sw / 2, -sh / 2, sw, sh, hh * 0.055); ctx.clip();
+  ctx.translate(-sw / 2, -sh / 2); ctx.scale(k, k);
+  ctx.drawImage(im, 0, 0);
+  if (over) over(k);
+  ctx.restore();
+  return { w: ww, h: hh, k, left: cx - sw / 2, top: cy - sh / 2 };
+}
+
+function words(t, start, text, x, y, size, { weight = 700, color = INK, align = "left", stagger = 0.06, alpha = 1, joined = false } = {}) {
+  const list = typeof text === "string" ? text.split(" ").map(w => [w]) : text;
+  ctx.font = font(size, weight);
+  const space = joined ? 0 : ctx.measureText(" ").width;
+  const widths = list.map(([w]) => ctx.measureText(w).width);
+  const total = widths.reduce((a, b) => a + b, 0) + space * (list.length - 1);
+  let xx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+  list.forEach(([w, c], i) => {
+    const p = outQuint(prog(t, start + i * stagger, start + i * stagger + 0.7));
+    if (p > 0) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(xx - 4, y - size * 1.1, widths[i] + 8, size * 1.45); ctx.clip();
+      ctx.globalAlpha = alpha * p; ctx.fillStyle = c || color;
+      ctx.fillText(w, xx, y + (1 - p) * size * 0.9);
+      ctx.restore();
+    }
+    xx += widths[i] + space;
+  });
+  return total;
+}
+function eyebrow(t, start, text, x, y, { align = "left", alpha = 1 } = {}) {
+  const p = outCubic(prog(t, start, start + 0.6));
+  ctx.save();
+  ctx.globalAlpha = alpha * p; ctx.font = font(22, 600); ctx.letterSpacing = "6px";
+  ctx.fillStyle = GOLD; ctx.textAlign = align;
+  ctx.fillText(text, x + (align === "left" ? 54 + 40 * (1 - p) : 0), y);
+  if (align === "left") ctx.fillRect(x, y - 9, 40 * p, 3);
+  ctx.restore();
+}
+function body(t, start, text, x, y, size, maxW, { align = "left", alpha = 1, color = MUTED } = {}) {
+  ctx.font = font(size, 500);
+  const lines = []; let line = "";
+  for (const w of text.split(" ")) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  }
+  lines.push(line);
+  lines.forEach((l, i) => {
+    const p = outCubic(prog(t, start + i * 0.08, start + i * 0.08 + 0.7));
+    ctx.save(); ctx.globalAlpha = alpha * p;
+    ctx.fillStyle = color; ctx.font = font(size, 500); ctx.textAlign = align;
+    ctx.fillText(l, x, y + i * size * 1.5 + (1 - p) * 18);
+    ctx.restore();
+  });
+}
+function chip(t, start, text, x, y, { color = GOLD, fg = BG, size = 26, icon = "", alpha = 1 } = {}) {
+  const p = outBack(prog(t, start, start + 0.55));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.font = font(size, 600);
+  const label = icon ? icon + "  " + text : text;
+  const w = ctx.measureText(label).width + size * 1.6, h = size * 2;
+  ctx.globalAlpha = alpha * clamp(p);
+  ctx.translate(x, y); ctx.scale(p, p);
+  ctx.shadowColor = "rgba(0,0,0,0.45)"; ctx.shadowBlur = 24; ctx.shadowOffsetY = 8;
+  ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.fillStyle = fg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(label, 0, 2);
+  ctx.restore();
+}
+function outlineChip(t, start, text, x, y, alpha = 1) {
+  const p = outCubic(prog(t, start, start + 0.5));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.font = font(26, 600);
+  const w = ctx.measureText(text).width + 44, h = 56;
+  ctx.globalAlpha = alpha * p; ctx.translate(x, y + (1 - p) * 20);
+  ctx.strokeStyle = "rgba(248,226,136,0.6)"; ctx.lineWidth = 2; ctx.fillStyle = "rgba(248,226,136,0.07)";
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, 0, 2);
+  ctx.restore();
+}
+const chipRow = (t, start, labels, y, alpha) => {
+  ctx.font = font(26, 600);
+  const ws = labels.map(s => ctx.measureText(s).width + 68);
+  let x = W / 2 - ws.reduce((a, b) => a + b, 0) / 2;
+  labels.forEach((s, i) => { outlineChip(t, start + i * 0.12, s, x + ws[i] / 2, y, alpha); x += ws[i]; });
+};
+// three typing dots
+function dots(x, y, r, t, color) {
+  for (let i = 0; i < 3; i++) {
+    const b = Math.max(0, Math.sin(t * 9 - i * 0.9));
+    ctx.fillStyle = color; ctx.globalAlpha = 0.45 + 0.55 * b;
+    ctx.beginPath(); ctx.arc(x + i * r * 3, y - b * r * 0.9, r, 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function ripple(x, y, t0, t, r = 60) {
+  const p = prog(t, t0, t0 + 0.6);
+  if (p <= 0 || p >= 1) return;
+  ctx.save(); ctx.globalAlpha = 0.5 * (1 - p); ctx.fillStyle = "#867303";
+  ctx.beginPath(); ctx.arc(x, y, r * outCubic(p), 0, 7); ctx.fill(); ctx.restore();
+}
+function brand(alpha) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(98, 78, 28, 0, 7); ctx.fill();
+  ctx.drawImage(img.logo, 76, 56, 44, 44);
+  ctx.font = font(26, 700); ctx.fillStyle = INK; ctx.textBaseline = "middle";
+  const w = ctx.measureText("Ambatu").width;
+  ctx.fillText("Ambatu", 140, 80); ctx.fillStyle = GOLD; ctx.fillText(".help", 140 + w, 80);
+  ctx.restore();
+}
+function logoDisc(x, y, s, alpha, glow = 0.5) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  ctx.shadowColor = `rgba(248,226,136,${glow})`; ctx.shadowBlur = 90;
+  ctx.fillStyle = "#FFF9ED"; ctx.beginPath(); ctx.arc(x, y, s / 2, 0, 7); ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.drawImage(img.logo, x - s * 0.36, y - s * 0.36, s * 0.72, s * 0.72);
+  ctx.restore();
+}
+const exitOf = (t, end, d = 0.55) => 1 - inOutCubic(prog(t, end - d, end));
+
+// ---------- scenes (animation time; voice/timing.json stretches them) ----------
+const scenes = [
+  // 1. Title
+  [0, 4.2, t => {
+    const ex = exitOf(t, 4.2);
+    ctx.save(); ctx.translate(0, (1 - ex) * -60);
+    for (let r = 0; r < 3; r++) {
+      const p = prog(t, 0.9 + r * 0.35, 2.6 + r * 0.35);
+      if (p <= 0 || p >= 1) continue;
+      ctx.save(); ctx.globalAlpha = ex * (1 - p) * 0.6; ctx.strokeStyle = GOLD; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(W / 2, 360, 100 + outCubic(p) * 340, 0, 7); ctx.stroke(); ctx.restore();
+    }
+    const lp = outBack(prog(t, 0.5, 1.2));
+    if (lp > 0) logoDisc(W / 2, 360, 200 * lp, ex * clamp(lp));
+    words(t, 1.2, [["Ambatu", INK], [".help", GOLD]], W / 2, 640, 120, { align: "center", alpha: ex, stagger: 0.14, joined: true });
+    body(t, 1.8, "Your friendly AI chatbot", W / 2, 730, 38, 1400, { align: "center", alpha: ex });
+    // a message bubble that types, then answers
+    const bp = outBack(prog(t, 2.3, 2.8));
+    if (bp > 0) {
+      ctx.save(); ctx.globalAlpha = ex * clamp(bp); ctx.translate(W / 2, 850); ctx.scale(bp, bp);
+      ctx.fillStyle = CARD; ctx.beginPath(); ctx.roundRect(-70, -32, 140, 64, [32, 32, 32, 6]); ctx.fill();
+      if (t < 3.4) dots(-30, 2, 9, t, GOLD);
+      else { ctx.font = font(28, 600); ctx.fillStyle = GOLD; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("Hi! 👋", 0, 2); }
+      ctx.restore();
+    }
+    ctx.restore();
+  }],
+  // 2. Problem
+  [3.9, 8.4, t => {
+    const ex = exitOf(t, 8.4);
+    ctx.save(); ctx.translate((1 - ex) * -120, 0);
+    eyebrow(t, 4.1, "THE PROBLEM", 200, 300, { alpha: ex });
+    words(t, 4.3, "Stuck on homework", 200, 420, 84, { alpha: ex, weight: 600, color: MUTED });
+    words(t, 4.55, "at midnight?", 200, 525, 84, { alpha: ex, weight: 600, color: MUTED });
+    const w2 = words(t, 5.3, [["Your"], ["teacher's"], ["offline.", GOLD]], 200, 640, 84, { alpha: ex });
+    ctx.font = font(84, 700);
+    const ow = ctx.measureText("offline.").width;
+    ctx.globalAlpha = ex; ctx.fillStyle = GOLD;
+    ctx.fillRect(200 + w2 - ow, 668, ow * outCubic(prog(t, 6.0, 6.6)), 8);
+    ctx.globalAlpha = 1;
+    body(t, 6.4, "Students need clear answers right when the question comes up, not the next school day.", 200, 760, 34, 1050, { alpha: ex });
+    // a "last seen" contact card that slides in
+    const cp = outQuint(prog(t, 4.8, 5.8));
+    if (cp > 0) {
+      const x = lerp(W + 50, 1430, cp), y = 470;
+      ctx.save(); ctx.globalAlpha = ex * cp;
+      ctx.shadowColor = "rgba(0,0,0,0.5)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 14;
+      ctx.fillStyle = CARD; ctx.beginPath(); ctx.roundRect(x - 230, y - 80, 460, 160, 28); ctx.fill();
+      ctx.shadowColor = "transparent";
+      ctx.fillStyle = "#3E3A26"; ctx.beginPath(); ctx.arc(x - 150, y, 44, 0, 7); ctx.fill();
+      ctx.font = font(34, 700); ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("T", x - 150, y + 2);
+      ctx.textAlign = "left"; ctx.font = font(30, 600); ctx.fillText("Teacher", x - 85, y - 22);
+      ctx.font = font(24, 500); ctx.fillStyle = MUTED; ctx.fillText("last seen 6 hours ago", x - 85, y + 22);
+      ctx.fillStyle = "#77715C"; ctx.beginPath(); ctx.arc(x - 118, y + 32, 10, 0, 7); ctx.fill();
+      ctx.restore();
+      // unread question bubble under it
+      const qp = outBack(prog(t, 6.0, 6.5));
+      if (qp > 0) {
+        ctx.save(); ctx.globalAlpha = ex * clamp(qp); ctx.translate(x + 40, y + 160); ctx.scale(qp, qp);
+        ctx.fillStyle = "#867303"; ctx.beginPath(); ctx.roundRect(-190, -36, 380, 72, [36, 36, 6, 36]); ctx.fill();
+        ctx.font = font(26, 600); ctx.fillStyle = "#FFF9ED"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("Sir, how does recursion…", 0, 2);
+        ctx.restore();
+        ctx.save(); ctx.globalAlpha = ex * clamp(qp) * 0.8; ctx.font = font(20, 600); ctx.fillStyle = MUTED; ctx.textAlign = "right";
+        ctx.fillText("11:58 PM  ·  ✓ sent", x + 230, y + 230); ctx.restore();
+      }
+    }
+    ctx.restore();
+  }],
+  // 3. Meet the app: sign in → greeting
+  [8.0, 12.6, t => {
+    const ex = exitOf(t, 12.6);
+    const push = 1 + 0.04 * prog(t, 8, 12.6);
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(push, push); ctx.translate(-W / 2, -H / 2);
+    eyebrow(t, 8.3, "MEET AMBATU", W / 2, 96, { align: "center", alpha: ex });
+    const side = outCubic(prog(t, 8.7, 9.7));
+    device("login", W / 2 - lerp(60, 440, side), 570, 720, { rot: -0.08 * side, alpha: ex * side * 0.9, glow: 0.12,
+      over: () => ripple(515, 1565, 9.9, t, 260) });
+    device("chat-empty-dark", W / 2 + lerp(60, 440, side), 570, 720, { rot: 0.08 * side, alpha: ex * side * 0.9, glow: 0.12 });
+    const rise = outQuint(prog(t, 8.3, 9.3));
+    // sign-in hands off to the greeting screen with a cross-fade
+    const sw = prog(t, 10.1, 10.6);
+    device("login", W / 2, lerp(1250, 550, rise), 800, { alpha: ex * (1 - sw), glow: 0.4 });
+    if (sw > 0) device("chat-empty", W / 2, lerp(1250, 550, rise), 800, { alpha: ex * sw, glow: 0.4,
+      over: () => [1157, 1262, 1367, 1472].forEach((y, i) => {
+        const p = prog(t, 10.7 + i * 0.12, 11.1 + i * 0.12); // suggestion chips glint in turn
+        if (p > 0 && p < 1) { ctx.save(); ctx.globalAlpha = 0.35 * Math.sin(p * Math.PI); ctx.fillStyle = GOLD;
+          ctx.beginPath(); ctx.roundRect(230, y - 42, 570, 84, 14); ctx.fill(); ctx.restore(); }
+      }) });
+    chipRow(t, 11.0, ["Sign in", "Suggested prompts", "Light & dark"], 1010, ex);
+    ctx.restore();
+  }],
+  // 4. Streaming reply
+  [12.3, 18.0, t => {
+    const ex = exitOf(t, 18.0);
+    ctx.save(); ctx.translate((1 - ex) * -80, 0);
+    const tx = 150;
+    eyebrow(t, 12.6, "01 · LIVE ANSWERS", tx, 330, { alpha: ex });
+    words(t, 12.8, "Ask anything.", tx, 440, 80, { alpha: ex });
+    words(t, 13.0, [["Answers"], ["stream"], ["in.", GOLD]], tx, 535, 80, { alpha: ex });
+    body(t, 13.6, "Replies arrive word by word from OpenAI's gpt-4o-mini, with a stop button if you change your mind.", tx, 625, 32, 640, { alpha: ex });
+    const p1 = outQuint(prog(t, 12.6, 13.5));
+    const msg = "Can you explain recursion with a short Python example?";
+    const typed = Math.floor(msg.length * prog(t, 13.5, 14.6));
+    const sent = t > 14.75, rev = prog(t, 15.45, 17.4);
+    const revealY = 832 + Math.floor(rev * 20) / 20 * (2000 - 832); // line-ish steps, like tokens landing
+    const s = device("chat", 1220, lerp(1250, 545, p1), 860, { alpha: ex, glow: 0.45, over: () => {
+      // hide what hasn't happened yet
+      ctx.fillStyle = LIGHT_BG;
+      if (!sent) ctx.fillRect(0, 160, 1030, 1880);
+      else {
+        const bp = outBack(prog(t, 14.75, 15.15));
+        ctx.fillRect(0, revealY, 1030, 2040 - revealY);
+        if (bp < 1) { // user bubble pops in from the composer
+          ctx.fillRect(0, 160, 1030, 600);
+          const im = img.chat;
+          ctx.save(); ctx.translate(1030, 744); ctx.scale(clamp(bp, 0, 2), clamp(bp, 0, 2)); ctx.globalAlpha = clamp(bp * 2);
+          ctx.drawImage(im, 0, 560, 1030, 190, -1030, -184, 1030, 190); ctx.restore();
+        }
+        if (rev <= 0 && t > 14.95) { // typing indicator
+          ctx.fillStyle = BUBBLE; ctx.beginPath(); ctx.roundRect(110, 840, 190, 84, 30); ctx.fill();
+          dots(160, 884, 11, t, "#6B6650");
+        }
+        if (rev > 0 && rev < 1) { // caret at the streaming edge
+          ctx.fillStyle = "#867303"; ctx.fillRect(130, revealY - 52, 6, 40 * (Math.sin(t * 14) > 0 ? 1 : 0));
+        }
+      }
+      // the composer: typing, then cleared on send
+      if (!sent && typed > 0) {
+        ctx.fillStyle = FIELD; ctx.fillRect(60, 2095, 780, 90);
+        ctx.font = "500 40px Poppins"; ctx.fillStyle = "#1F1B10"; ctx.textBaseline = "middle";
+        let shown = msg.slice(0, typed);
+        while (ctx.measureText(shown).width > 740) shown = shown.slice(1);
+        ctx.fillText(shown, 82, 2140);
+        ctx.fillStyle = "#867303"; ctx.beginPath(); ctx.arc(935, 2135, 64, 0, 7); ctx.fill();
+        ctx.strokeStyle = "#fff"; ctx.lineWidth = 7; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(935, 2165); ctx.lineTo(935, 2105); ctx.moveTo(910, 2128); ctx.lineTo(935, 2105); ctx.lineTo(960, 2128); ctx.stroke();
+      }
+      ripple(935, 2135, 14.6, t, 110);
+    } });
+    if (s && sent && rev < 1) chip(t, 15.45, "Streaming…", 1220 + 300, 300, { size: 24, alpha: ex * (1 - prog(t, 17.3, 17.6)) });
+    if (s && rev >= 1) chip(t, 17.4, "Done in seconds", 1220 + 300, 300, { size: 24, icon: "✓", alpha: ex });
+    ctx.restore();
+  }],
+  // 5. Rich replies: zoom into the real code block
+  [17.7, 22.4, t => {
+    const ex = exitOf(t, 22.4);
+    ctx.save(); ctx.translate((1 - ex) * 80, 0);
+    const p1 = outQuint(prog(t, 17.9, 18.8));
+    const s = device("chat-dark", lerp(-300, 450, p1), 545, 840, { alpha: ex, glow: 0.35 });
+    const tx = 1060;
+    eyebrow(t, 18.2, "02 · RICH REPLIES", tx, 250, { alpha: ex });
+    words(t, 18.4, [["Formatted,"], ["not"], ["flat.", GOLD]], tx, 350, 76, { alpha: ex });
+    if (s) {
+      // code block (screen px 170,1278 790×465) lifts out of the phone and scales up
+      const z = outQuint(prog(t, 18.9, 19.9));
+      const sx = s.left + 170 * s.k, sy = s.top + 1278 * s.k, sw = 790 * s.k, sh = 465 * s.k;
+      const dw = 760, dh = dw * 465 / 790, dx = tx, dy = 430;
+      if (z > 0) {
+        ctx.save(); ctx.globalAlpha = ex * 0.5 * z; ctx.strokeStyle = GOLD; ctx.lineWidth = 2; ctx.setLineDash([6, 8]);
+        ctx.beginPath(); ctx.moveTo(sx + sw, sy); ctx.lineTo(lerp(sx + sw, dx, z), lerp(sy, dy, z));
+        ctx.moveTo(sx + sw, sy + sh); ctx.lineTo(lerp(sx + sw, dx, z), lerp(sy + sh, dy + dh, z)); ctx.stroke();
+        ctx.restore();
+        ctx.save(); ctx.globalAlpha = ex * 0.9; ctx.strokeStyle = GOLD; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.roundRect(sx, sy, sw, sh, 10); ctx.stroke(); ctx.restore();
+        const x = lerp(sx, dx, z), y = lerp(sy, dy, z), w = lerp(sw, dw, z), h = lerp(sh, dh, z);
+        ctx.save(); ctx.globalAlpha = ex;
+        ctx.shadowColor = "rgba(0,0,0,0.6)"; ctx.shadowBlur = 60; ctx.shadowOffsetY = 24;
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 22 * z); ctx.fillStyle = "#000"; ctx.fill();
+        ctx.shadowColor = "transparent"; ctx.clip();
+        ctx.drawImage(img["chat-dark"], 170, 1278, 790, 465, x, y, w, h);
+        // tap "Copy code"
+        const cx = x + (805 - 170) / 790 * w, cy = y + (1330 - 1278) / 465 * h;
+        ctx.restore();
+        ctx.save(); ctx.globalAlpha = ex; ripple(cx, cy, 20.3, t, 70); ctx.restore();
+        chip(t, 20.45, "Copied", cx - 20, cy - 70, { size: 22, icon: "✓", alpha: ex * (1 - prog(t, 21.6, 22.0)) });
+      }
+    }
+    chipRow2(t, 20.6, ["Markdown", "Code blocks", "Copy · Retry · Delete"], tx, 960, ex);
+    ctx.restore();
+  }],
+  // 6. Saved chats: the drawer slides in
+  [22.1, 26.6, t => {
+    const ex = exitOf(t, 26.6);
+    ctx.save(); ctx.translate((1 - ex) * -80, 0);
+    const p1 = outQuint(prog(t, 22.2, 23.0));
+    const d = outQuint(prog(t, 23.1, 23.8));
+    device("chat-empty", 1350, lerp(1250, 545, p1), 860, { alpha: ex, glow: 0.4, over: () => {
+      if (d <= 0) return;
+      ctx.save(); ctx.globalAlpha = d; ctx.drawImage(img.drawer, 760, 0, 270, 2230, 760, 0, 270, 2230); ctx.restore();
+      ctx.save(); ctx.translate(-(1 - d) * 760, 0);
+      ctx.drawImage(img.drawer, 0, 0, 760, 2230, 0, 0, 760, 2230);
+      [330, 490, 650, 810].forEach((y, i) => { // rows settle in one by one
+        const p = prog(t, 23.9 + i * 0.12, 24.4 + i * 0.12);
+        if (p < 1) { ctx.fillStyle = "rgb(250,242,229)"; ctx.globalAlpha = 1 - outCubic(p); ctx.fillRect(20, y, 720, 140); ctx.globalAlpha = 1; }
+      });
+      const hp = prog(t, 24.8, 25.4); // highlight the first chat, then a tap
+      if (hp > 0) { ctx.globalAlpha = 0.28 * Math.min(1, hp * 3); ctx.fillStyle = "#867303";
+        ctx.beginPath(); ctx.roundRect(24, 318, 712, 132, 28); ctx.fill(); ctx.globalAlpha = 1; }
+      ripple(300, 384, 25.4, t, 260);
+      ctx.restore();
+    } });
+    const tx = 150;
+    eyebrow(t, 22.4, "03 · SAVED CHATS", tx, 360, { alpha: ex });
+    words(t, 22.6, "Pick up where", tx, 470, 80, { alpha: ex });
+    words(t, 22.8, [["you"], ["left"], ["off.", GOLD]], tx, 565, 80, { alpha: ex });
+    body(t, 23.4, "Conversations are saved on the phone. Search, rename or delete them, with undo.", tx, 655, 32, 620, { alpha: ex });
+    ctx.restore();
+  }],
+  // 7. Make it yours: settings, light → dark wipe, FAQ
+  [26.3, 30.6, t => {
+    const ex = exitOf(t, 30.6);
+    ctx.save(); ctx.translate(0, (1 - ex) * -60);
+    eyebrow(t, 26.5, "04 · MAKE IT YOURS", W / 2, 110, { align: "center", alpha: ex });
+    words(t, 26.6, [["Your"], ["theme,"], ["your"], ["text,"], ["your", GOLD], ["bot.", GOLD]], W / 2, 200, 64, { align: "center", alpha: ex });
+    const items = [["settings", "Settings"], ["chat", "Light ↔ Dark"], ["faq", "Help & FAQ"]];
+    items.forEach(([n, label], i) => {
+      const st = 26.9 + i * 0.22;
+      const p = outQuint(prog(t, st, st + 0.9));
+      const x = W / 2 + (i - 1) * 480, y = lerp(1250, 600, p) + Math.sin((t - st) * 1.6 + i) * 6;
+      const wipe = inOutCubic(prog(t, 28.3, 29.2));
+      device(n, x, y, 640, { alpha: ex, glow: i === 1 ? 0.45 : 0.22, over: i === 0 ? () => ripple(827, 232, 28.1, t, 120)
+        : i === 1 ? () => { if (wipe > 0) { ctx.save(); ctx.beginPath(); ctx.arc(980, 60, 2500 * wipe, 0, 7); ctx.clip(); ctx.drawImage(img["chat-dark"], 0, 0); ctx.restore(); } }
+        : null });
+      chip(t, st + 0.8, label, x, 975, { color: CARD, fg: INK, size: 26, alpha: ex });
+    });
+    ctx.restore();
+  }],
+  // 8. Outro
+  [30.3, DURATION, t => {
+    const lp = outBack(prog(t, 30.5, 31.2));
+    if (lp > 0) logoDisc(W / 2, 250, 170 * lp, clamp(lp));
+    words(t, 30.8, [["Ambatu", INK], [".help", GOLD]], W / 2, 460, 104, { align: "center", stagger: 0.12, joined: true });
+    chipRow(t, 31.3, ["Flutter", "Dart", "Material 3", "OpenAI API"], 570, 1);
+    body(t, 31.9, "CC 206 final project · Application Development & Emerging Technologies", W / 2, 690, 32, 1600, { align: "center", color: INK });
+    body(t, 32.2, "I designed the UI/UX, from onboarding to the chat screen.", W / 2, 745, 28, 1600, { align: "center" });
+  }],
+];
+// left-aligned chip row starting at x
+function chipRow2(t, start, labels, x, y, alpha) {
+  ctx.font = font(26, 600);
+  labels.forEach((s, i) => { const w = ctx.measureText(s).width + 44; outlineChip(t, start + i * 0.12, s, x + w / 2, y, alpha); x += w + 20; });
+}
+
+function draw(T) {
+  const t = warp(T);
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.letterSpacing = "0px";
+  background(t);
+  for (const [a, b, fn] of scenes) if (t >= a && t <= b) { ctx.save(); fn(t); ctx.restore(); }
+  brand(clamp(prog(t, 8.3, 8.9)) * (1 - prog(t, 29.9, 30.4)));
+  finish(T);
+  ctx.restore();
+}
+
+// ---------- audio: Kokoro voice + a soft synth bed, whooshes on cuts, pops on taps ----------
+async function mixAudio() {
+  const sr = 48000, ac = new OfflineAudioContext(2, Math.ceil(OUT * sr), sr);
+  const load = async f => ac.decodeAudioData(await (await fetch("voice/" + f)).arrayBuffer());
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -20; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
+  comp.connect(ac.destination);
+  const voiceAt = [];
+  for (const c of timing.clips) {
+    const src = ac.createBufferSource(); src.buffer = await load(c.file);
+    src.connect(comp); src.start(c.at); voiceAt.push([c.at, c.at + c.dur]);
+  }
+  // pad: warm Fmaj9 voicing, ducked under the voice
+  const pad = ac.createGain(); pad.gain.setValueAtTime(0, 0);
+  pad.gain.linearRampToValueAtTime(0.05, 1.5);
+  for (const [a, b] of voiceAt) { pad.gain.setTargetAtTime(0.028, a - 0.1, 0.15); pad.gain.setTargetAtTime(0.05, b + 0.1, 0.4); }
+  pad.gain.setTargetAtTime(0, OUT - 1.5, 0.4);
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1400;
+  pad.connect(lp).connect(ac.destination);
+  for (const f of [174.6, 220, 261.6, 329.6, 392]) for (const d of [-4, 4]) {
+    const o = ac.createOscillator(); o.type = "triangle"; o.frequency.value = f; o.detune.value = d;
+    const g = ac.createGain(); g.gain.value = 0.18; o.connect(g).connect(pad); o.start(0); o.stop(OUT);
+  }
+  // whoosh: band-passed noise sweep into each cut
+  const noise = ac.createBuffer(1, sr * 2, sr);
+  { const d = noise.getChannelData(0); let s = 7; for (let i = 0; i < d.length; i++) { s = (s * 16807) % 2147483647; d[i] = s / 1073741823 - 1; } }
+  const whoosh = at => {
+    const src = ac.createBufferSource(); src.buffer = noise;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.2;
+    bp.frequency.setValueAtTime(300, at); bp.frequency.exponentialRampToValueAtTime(3200, at + 0.45); bp.frequency.exponentialRampToValueAtTime(600, at + 0.8);
+    const g = ac.createGain(); g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(0.09, at + 0.4); g.gain.linearRampToValueAtTime(0, at + 0.85);
+    src.connect(bp).connect(g).connect(ac.destination); src.start(at); src.stop(at + 0.9);
+  };
+  timing.newBounds.slice(1, -1).forEach(b => whoosh(b - 0.55));
+  // pop: soft sine blip
+  const pop = (at, f = 880, gain = 0.12) => {
+    const o = ac.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(f, at); o.frequency.exponentialRampToValueAtTime(f * 1.6, at + 0.08);
+    const g = ac.createGain(); g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(gain, at + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+    o.connect(g).connect(ac.destination); o.start(at); o.stop(at + 0.2);
+  };
+  pop(unwarp(0.5), 660); pop(unwarp(3.4), 990, 0.08); pop(unwarp(6.0), 740, 0.08);
+  pop(unwarp(9.9), 700, 0.08); pop(unwarp(14.6), 880); pop(unwarp(14.75), 1180, 0.08);
+  pop(unwarp(17.4), 990, 0.08); pop(unwarp(20.3), 820); pop(unwarp(25.4), 760, 0.08); pop(unwarp(28.1), 700, 0.08);
+  pop(unwarp(30.5), 660);
+  const buf = await ac.startRendering();
+  let peak = 0;
+  for (let ch = 0; ch < 2; ch++) for (const v of buf.getChannelData(ch)) peak = Math.max(peak, Math.abs(v));
+  const k = 0.89 / peak; // normalise to -1 dBFS
+  for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); for (let i = 0; i < d.length; i++) d[i] *= k; }
+  return buf;
+}
+
+// ---------- export: deterministic, frame by frame ----------
+async function render(name = "ambatuhelp-demo.webm", bitrate = 1_000_000) {
+  const muxer = new WebMMuxer.Muxer({
+    target: new WebMMuxer.ArrayBufferTarget(),
+    video: { codec: "V_VP9", width: W, height: H, frameRate: FPS },
+    audio: { codec: "A_OPUS", sampleRate: 48000, numberOfChannels: 2 },
+  });
+  const ab = await mixAudio();
+  const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { throw e; } });
+  aenc.configure({ codec: "opus", sampleRate: 48000, numberOfChannels: 2, bitrate: 96000 });
+  let apos = 0;
+  const feedAudio = untilSec => {
+    const until = Math.min(ab.length, Math.round(untilSec * 48000));
+    while (apos < until) {
+      const n = Math.min(4800, ab.length - apos), data = new Float32Array(n * 2);
+      data.set(ab.getChannelData(0).subarray(apos, apos + n), 0);
+      data.set(ab.getChannelData(1).subarray(apos, apos + n), n);
+      const ad = new AudioData({ format: "f32-planar", sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((apos / 48000) * 1e6), data });
+      aenc.encode(ad); ad.close(); apos += n;
+    }
+  };
+  const enc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => { throw e; } });
+  enc.configure({ codec: "vp09.00.10.08", width: W, height: H, bitrate, bitrateMode: "variable", latencyMode: "quality", framerate: FPS });
+  const n = Math.round(OUT * FPS);
+  for (let i = 0; i < n; i++) {
+    draw(i / FPS);
+    const f = new VideoFrame(cv, { timestamp: Math.round((i * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
+    enc.encode(f, { keyFrame: i % (FPS * 4) === 0 });
+    f.close();
+    feedAudio((i + 1) / FPS);
+    while (enc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 1));
+    if (i % 60 === 0) document.title = `rendering ${i}/${n}`;
+  }
+  feedAudio(OUT + 1);
+  await enc.flush(); await aenc.flush();
+  muxer.finalize();
+  const res = await fetch(`/save?name=${encodeURIComponent(name)}`, { method: "POST", body: muxer.target.buffer });
+  document.title = "done";
+  return res.text();
+}
+
+// stills for review: POST /save a PNG of video time T
+let showBar = true;
+async function still(T, name, bar = true) {
+  showBar = bar; draw(T); showBar = true;
+  const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+  return (await fetch(`/save?name=${name}`, { method: "POST", body: blob })).text();
+}
+
+window.ready = loadAll().then(() => draw(2.5));
+Object.assign(window, { draw, render, still, unwarp });
+</script>
+</body>
+</html>

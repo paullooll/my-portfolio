@@ -1,0 +1,540 @@
+<!doctype html>
+<!-- KayaBa? demo video renderer (source of public/projects/kayaba-demo.webm).
+     Same pipeline as ../ambatuhelp-video. Re-render: copy the app's screenshots
+     (kayaba/docs/revamp/*.png) into screens/, and CubaoFree2-Regular.ttf + Barlow-Medium/SemiBold.ttf
+     here (also in ../covers), run `node ../tts/gen.mjs af_heart voice lines.mjs` from this folder,
+     `node server.cjs`, open http://localhost:4392 and run `await render()` in the console;
+     output lands in out/. -->
+<html>
+<head>
+<meta charset="utf-8">
+<title>KayaBa? promo renderer</title>
+<style>
+  html, body { margin: 0; background: #000; }
+  canvas { width: 100vw; height: auto; display: block; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/webm-muxer@5.0.3/build/webm-muxer.js"></script>
+</head>
+<body>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script>
+const W = 1920, H = 1080, FPS = 30, DURATION = 33;
+// Narration timing (voice/timing.json): scene [bounds[i], bounds[i+1]] is stretched to
+// [newBounds[i], newBounds[i+1]] so its voice line fits. OUT = final video length.
+let timing = null, OUT = DURATION;
+function seg(x, from, to) {
+  let i = 0;
+  while (i < from.length - 2 && x > from[i + 1]) i++;
+  return to[i] + ((x - from[i]) * (to[i + 1] - to[i])) / (from[i + 1] - from[i]);
+}
+const warp = T => (timing ? seg(T, timing.newBounds, timing.bounds) : T);
+const unwarp = t => (timing ? seg(t, timing.bounds, timing.newBounds) : t);
+const cv = document.getElementById("c"), ctx = cv.getContext("2d");
+
+// ---------- palette: the app's 5 brand colors (DESIGN_SYSTEM.md) ----------
+const BG = "#FAF8F3", BLUE = "#0038A8", GOLD = "#FCD116", RED = "#CE1126", INK = "#14213D";
+const MUTED = "#596275", CARD = "#FFFFFF", FIELD = "#FFFFFF";
+
+// ---------- easing ----------
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const outCubic = x => 1 - Math.pow(1 - x, 3);
+const outQuint = x => 1 - Math.pow(1 - x, 5);
+const inOutCubic = x => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const outBack = x => { const c = 1.6; return 1 + (c + 1) * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+const lerp = (a, b, x) => a + (b - a) * x;
+
+// ---------- assets: the app's own screenshots (780×1688, from kayaba/docs/revamp) ----------
+const img = {};
+const names = ["onboarding-light", "add-light", "detail-light", "budget-light", "home-light", "home-dark", "wishlist-dark", "settings-dark", "login-dark"];
+const loadImg = (n, src) => new Promise((ok, bad) => { const i = new Image(); i.onload = () => ok((img[n] = i)); i.onerror = bad; i.src = src; });
+async function loadAll() {
+  const fonts = [["Cubao", "CubaoFree2-Regular.ttf", 400], ["Barlow", "Barlow-Medium.ttf", 500], ["Barlow", "Barlow-SemiBold.ttf", 600]];
+  await Promise.all(fonts.map(async ([fam, f, w]) => document.fonts.add(await new FontFace(fam, `url(${f})`, { weight: String(w) }).load())));
+  await Promise.all(names.map(n => loadImg(n, `screens/${n}.png`)));
+  timing = await (await fetch("voice/timing.json")).json();
+  OUT = timing.newBounds.at(-1);
+}
+
+// ---------- helpers ----------
+const font = (size, weight = 600) => `${weight} ${size}px Barlow`;
+const display = size => `400 ${size}px Cubao`;
+
+// the eight-ray Philippine sun (as in the app's header)
+function sun(x, y, r, rot = 0, alpha = 1) {
+  if (alpha <= 0 || r <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(x, y); ctx.rotate(rot); ctx.fillStyle = GOLD;
+  for (let i = 0; i < 8; i++) {
+    ctx.save(); ctx.rotate((i * Math.PI) / 4);
+    ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(r * 0.1, -r * 0.42); ctx.lineTo(-r * 0.1, -r * 0.42); ctx.fill();
+    ctx.globalAlpha = alpha * 0.8;
+    ctx.beginPath(); ctx.moveTo(-r * 0.15, -r * 0.85); ctx.lineTo(-r * 0.04, -r * 0.44); ctx.lineTo(-r * 0.19, -r * 0.4); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(r * 0.15, -r * 0.85); ctx.lineTo(r * 0.19, -r * 0.4); ctx.lineTo(r * 0.04, -r * 0.44); ctx.fill();
+    ctx.restore(); ctx.globalAlpha = alpha;
+  }
+  ctx.beginPath(); ctx.arc(0, 0, r * 0.42, 0, 7); ctx.fill();
+  ctx.fillStyle = "#FDE77A"; ctx.beginPath(); ctx.arc(0, 0, r * 0.23, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
+// drifting clay pebbles: the video's background motif (the app's woven pattern)
+const motes = Array.from({ length: 16 }, (_, i) => {
+  let s = (i + 1) * 9301 + 49297;
+  const r = () => ((s = (s * 233280 + 49297) % 1e6) / 1e6);
+  return { x: r() * W, y: r() * H, w: 40 + r() * 70, sp: 6 + r() * 12, ph: r() * 6, gold: r() > 0.6 };
+});
+function background(t) {
+  ctx.fillStyle = BG; ctx.fillRect(0, 0, W, H);
+  const glow = (x, y, r, col, a) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(${col},${a})`); g.addColorStop(1, `rgba(${col},0)`);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  };
+  glow(W * 0.72 + Math.sin(t * 0.33) * 170, H * 0.35 + Math.cos(t * 0.25) * 90, 950, "252,209,22", 0.16);
+  glow(W * 0.15 + Math.cos(t * 0.21) * 140, H * 0.9, 800, "0,56,168", 0.06);
+  for (const m of motes) {
+    const y = ((m.y - t * m.sp) % (H + 200) + H + 200) % (H + 200) - 100;
+    const x = m.x + Math.sin(t * 0.4 + m.ph) * 30, h = m.w * 0.45;
+    ctx.save(); ctx.globalAlpha = m.gold ? 0.12 : 0.04; ctx.fillStyle = m.gold ? GOLD : INK;
+    ctx.beginPath(); ctx.roundRect(x, y, m.w, h, h / 2); ctx.fill();
+    ctx.restore();
+  }
+}
+
+function finish(T) {
+  const v = ctx.createRadialGradient(W / 2, H / 2, H * 0.45, W / 2, H / 2, H * 1.1);
+  v.addColorStop(0, "rgba(20,33,61,0)"); v.addColorStop(1, "rgba(20,33,61,0.12)");
+  ctx.fillStyle = v; ctx.fillRect(0, 0, W, H);
+  if (showBar) {
+    ctx.fillStyle = "rgba(20,33,61,0.08)"; ctx.fillRect(0, H - 4, W, 4);
+    ctx.fillStyle = BLUE; ctx.fillRect(0, H - 4, W * (T / OUT), 4);
+  }
+  const fade = Math.max(1 - prog(T, 0, 0.5), prog(T, OUT - 0.7, OUT));
+  if (fade > 0) { ctx.fillStyle = `rgba(250,248,243,${fade})`; ctx.fillRect(0, 0, W, H); }
+}
+
+// A phone: navy bezel + real screen. `over(k)` draws on top in screen-pixel coordinates.
+function device(name, cx, cy, h, { rot = 0, alpha = 1, glow = 0.3, scale = 1, over = null } = {}) {
+  const im = img[name]; if (!im || alpha <= 0) return null;
+  const hh = h * scale, sh = hh * 0.96, sw = sh * (im.width / im.height), bez = hh * 0.02, ww = sw + bez * 2;
+  const k = sh / im.height;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.translate(cx, cy); ctx.rotate(rot);
+  ctx.shadowColor = `rgba(252,209,22,${glow})`; ctx.shadowBlur = 90;
+  ctx.fillStyle = INK;
+  ctx.beginPath(); ctx.roundRect(-ww / 2, -hh / 2, ww, hh, hh * 0.07); ctx.fill();
+  ctx.shadowColor = "rgba(20,33,61,0.35)"; ctx.shadowBlur = 60; ctx.shadowOffsetY = 34; ctx.fill();
+  ctx.shadowColor = "transparent";
+  ctx.beginPath(); ctx.roundRect(-sw / 2, -sh / 2, sw, sh, hh * 0.058); ctx.clip();
+  ctx.translate(-sw / 2, -sh / 2); ctx.scale(k, k);
+  ctx.drawImage(im, 0, 0);
+  if (over) over(k);
+  ctx.restore();
+  return { w: ww, h: hh, k, left: cx - sw / 2, top: cy - sh / 2 };
+}
+
+// Word-by-word rise. Display (Cubao) by default; `plain` uses Barlow.
+function words(t, start, text, x, y, size, { plain = false, color = INK, align = "left", stagger = 0.06, alpha = 1, joined = false } = {}) {
+  const list = typeof text === "string" ? text.split(" ").map(w => [w]) : text;
+  ctx.font = plain ? font(size, 600) : display(size);
+  const space = joined ? 0 : ctx.measureText(" ").width;
+  const widths = list.map(([w]) => ctx.measureText(w).width);
+  const total = widths.reduce((a, b) => a + b, 0) + space * (list.length - 1);
+  let xx = align === "center" ? x - total / 2 : align === "right" ? x - total : x;
+  list.forEach(([w, c], i) => {
+    const p = outQuint(prog(t, start + i * stagger, start + i * stagger + 0.7));
+    if (p > 0) {
+      ctx.save();
+      ctx.beginPath(); ctx.rect(xx - 4, y - size * 1.1, widths[i] + 8, size * 1.45); ctx.clip();
+      ctx.globalAlpha = alpha * p; ctx.fillStyle = c || color;
+      ctx.fillText(w, xx, y + (1 - p) * size * 0.9);
+      ctx.restore();
+    }
+    xx += widths[i] + space;
+  });
+  return total;
+}
+function eyebrow(t, start, text, x, y, { align = "left", alpha = 1 } = {}) {
+  const p = outCubic(prog(t, start, start + 0.6));
+  ctx.save();
+  ctx.globalAlpha = alpha * p; ctx.font = font(22, 600); ctx.letterSpacing = "6px";
+  ctx.fillStyle = BLUE; ctx.textAlign = align;
+  ctx.fillText(text, x + (align === "left" ? 54 + 40 * (1 - p) : 0), y);
+  if (align === "left") { ctx.fillStyle = GOLD; ctx.fillRect(x, y - 11, 40 * p, 6); }
+  ctx.restore();
+}
+function body(t, start, text, x, y, size, maxW, { align = "left", alpha = 1, color = MUTED } = {}) {
+  ctx.font = font(size, 500);
+  const lines = []; let line = "";
+  for (const w of text.split(" ")) {
+    const test = line ? line + " " + w : w;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = w; } else line = test;
+  }
+  lines.push(line);
+  lines.forEach((l, i) => {
+    const p = outCubic(prog(t, start + i * 0.08, start + i * 0.08 + 0.7));
+    ctx.save(); ctx.globalAlpha = alpha * p;
+    ctx.fillStyle = color; ctx.font = font(size, 500); ctx.textAlign = align;
+    ctx.fillText(l, x, y + i * size * 1.45 + (1 - p) * 18);
+    ctx.restore();
+  });
+}
+// A clay pill: soft offset shadow + inner highlight, like the app's Clay.decoration.
+function clay(t, start, text, x, y, { color = CARD, fg = INK, size = 30, disp = false, icon = "", alpha = 1, rot = 0 } = {}) {
+  const p = outBack(prog(t, start, start + 0.55));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.font = disp ? display(size) : font(size, 600);
+  const label = icon ? icon + "  " + text : text;
+  const w = ctx.measureText(label).width + size * 1.6, h = size * 2;
+  ctx.globalAlpha = alpha * clamp(p);
+  ctx.translate(x, y); ctx.rotate(rot); ctx.scale(p, p);
+  ctx.fillStyle = "rgba(20,33,61,0.12)"; ctx.beginPath(); ctx.roundRect(-w / 2 + 8, -h / 2 + 10, w, h, h / 2); ctx.fill();
+  ctx.fillStyle = color; ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.7)"; ctx.lineWidth = 2; ctx.stroke();
+  ctx.fillStyle = fg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(label, 0, disp ? size * 0.06 : 2);
+  ctx.restore();
+}
+function outlineChip(t, start, text, x, y, alpha = 1) {
+  const p = outCubic(prog(t, start, start + 0.5));
+  if (p <= 0) return;
+  ctx.save();
+  ctx.font = font(26, 600);
+  const w = ctx.measureText(text).width + 44, h = 56;
+  ctx.globalAlpha = alpha * p; ctx.translate(x, y + (1 - p) * 20);
+  ctx.strokeStyle = "rgba(0,56,168,0.45)"; ctx.lineWidth = 2; ctx.fillStyle = "rgba(255,255,255,0.8)";
+  ctx.beginPath(); ctx.roundRect(-w / 2, -h / 2, w, h, h / 2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = INK; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(text, 0, 2);
+  ctx.restore();
+}
+const chipRow = (t, start, labels, y, alpha) => {
+  ctx.font = font(26, 600);
+  const ws = labels.map(s => ctx.measureText(s).width + 68);
+  let x = W / 2 - ws.reduce((a, b) => a + b, 0) / 2;
+  labels.forEach((s, i) => { outlineChip(t, start + i * 0.12, s, x + ws[i] / 2, y, alpha); x += ws[i]; });
+};
+function chipRow2(t, start, labels, x, y, alpha) {
+  ctx.font = font(26, 600);
+  labels.forEach((s, i) => { const w = ctx.measureText(s).width + 44; outlineChip(t, start + i * 0.12, s, x + w / 2, y, alpha); x += w + 20; });
+}
+function ripple(x, y, t0, t, r = 60) {
+  const p = prog(t, t0, t0 + 0.6);
+  if (p <= 0 || p >= 1) return;
+  ctx.save(); ctx.globalAlpha = 0.45 * (1 - p); ctx.fillStyle = BLUE;
+  ctx.beginPath(); ctx.arc(x, y, r * outCubic(p), 0, 7); ctx.fill(); ctx.restore();
+}
+function brand(alpha, t) {
+  if (alpha <= 0) return;
+  ctx.save(); ctx.globalAlpha = alpha;
+  sun(96, 78, 34, t * 0.4, alpha);
+  ctx.font = display(34); ctx.textBaseline = "middle";
+  ctx.fillStyle = INK; ctx.fillText("KAYA", 142, 82);
+  ctx.fillStyle = BLUE; ctx.fillText("BA?", 142 + ctx.measureText("KAYA").width, 82);
+  ctx.restore();
+}
+const exitOf = (t, end, d = 0.55) => 1 - inOutCubic(prog(t, end - d, end));
+
+// ---------- scenes (animation time; voice/timing.json stretches them) ----------
+const scenes = [
+  // 1. Title
+  [0, 4.2, t => {
+    const ex = exitOf(t, 4.2);
+    ctx.save(); ctx.translate(0, (1 - ex) * -60);
+    const sp = outBack(prog(t, 0.4, 1.2));
+    sun(W / 2, 300, 150 * sp, t * 0.5, ex * clamp(sp));
+    words(t, 1.1, [["KAYA", INK], ["BA?", BLUE]], W / 2, 640, 170, { align: "center", alpha: ex, stagger: 0.16, joined: true });
+    body(t, 1.7, "“Kaya ba?”  ·  Filipino for “Can I afford it?”", W / 2, 740, 40, 1400, { align: "center", alpha: ex });
+    clay(t, 2.4, "₱3,500", W / 2 - 170, 870, { size: 40, disp: true, alpha: ex });
+    const ap = outCubic(prog(t, 2.7, 3.0));
+    ctx.save(); ctx.globalAlpha = ex * ap; ctx.font = font(48, 600); ctx.fillStyle = MUTED; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("→", W / 2 + 10, 872); ctx.restore();
+    clay(t, 2.9, "20.5 H", W / 2 + 190, 870, { size: 40, disp: true, color: BLUE, fg: BG, alpha: ex });
+    ctx.restore();
+  }],
+  // 2. Problem
+  [3.9, 8.4, t => {
+    const ex = exitOf(t, 8.4);
+    ctx.save(); ctx.translate((1 - ex) * -120, 0);
+    eyebrow(t, 4.1, "THE PROBLEM", 200, 300, { alpha: ex });
+    words(t, 4.3, "A price tag shows", 200, 410, 76, { alpha: ex, plain: true, color: MUTED });
+    words(t, 4.55, [["pesos."]], 200, 510, 76, { alpha: ex, plain: true, color: MUTED });
+    words(t, 5.4, [["NOT"], ["THE"], ["HOURS", BLUE]], 200, 640, 92, { alpha: ex });
+    words(t, 5.7, "YOU WORKED FOR IT.", 200, 750, 92, { alpha: ex });
+    // a price tag swings in; a second tag asks the real question
+    const cp = outQuint(prog(t, 4.6, 5.6));
+    if (cp > 0) {
+      const x = lerp(W + 200, 1460, cp), y = 430, sw = Math.sin(t * 2.2) * 0.04;
+      ctx.save(); ctx.globalAlpha = ex * cp; ctx.translate(x, y); ctx.rotate(-0.12 + sw);
+      ctx.fillStyle = "rgba(20,33,61,0.12)"; ctx.beginPath(); ctx.roundRect(-200 + 10, -100 + 12, 400, 200, 34); ctx.fill();
+      ctx.fillStyle = CARD; ctx.beginPath(); ctx.roundRect(-200, -100, 400, 200, 34); ctx.fill();
+      ctx.fillStyle = BG; ctx.beginPath(); ctx.arc(-150, -50, 16, 0, 7); ctx.fill();
+      ctx.font = font(28, 600); ctx.fillStyle = MUTED; ctx.textAlign = "center"; ctx.fillText("Running shoes", 20, -32);
+      ctx.font = display(88); ctx.fillStyle = INK; ctx.fillText("₱3,500", 20, 62);
+      ctx.restore();
+    }
+    clay(t, 6.3, "= ? hours of work", 1500, 680, { size: 36, color: GOLD, alpha: ex, rot: 0.05 });
+    ctx.restore();
+  }],
+  // 3. Onboarding: income + schedule → hourly rate
+  [8.0, 12.6, t => {
+    const ex = exitOf(t, 12.6);
+    const push = 1 + 0.04 * prog(t, 8, 12.6);
+    ctx.save(); ctx.translate(W / 2, H / 2); ctx.scale(push, push); ctx.translate(-W / 2, -H / 2);
+    eyebrow(t, 8.3, "MEET KAYA", W / 2, 96, { align: "center", alpha: ex });
+    const side = outCubic(prog(t, 8.7, 9.7));
+    device("onboarding-light", W / 2 - lerp(40, 470, side), 560, 740, { rot: -0.07 * side, alpha: ex * side, glow: 0.15 });
+    device("settings-dark", W / 2 + lerp(40, 470, side), 560, 740, { rot: 0.07 * side, alpha: ex * side, glow: 0.15 });
+    const rise = outQuint(prog(t, 8.3, 9.3));
+    device("home-light", W / 2, lerp(1250, 545, rise), 820, { alpha: ex, glow: 0.45,
+      over: () => { // the hourly-rate card glows as the number lands
+        const p = prog(t, 10.3, 11.3);
+        if (p > 0 && p < 1) { ctx.save(); ctx.globalAlpha = 0.35 * Math.sin(p * Math.PI); ctx.fillStyle = GOLD;
+          ctx.beginPath(); ctx.roundRect(34, 324, 712, 296, 48); ctx.fill(); ctx.restore(); }
+      } });
+    clay(t, 10.9, "₱170.45 an hour", W / 2 + 330, 330, { size: 32, color: BLUE, fg: BG, alpha: ex, rot: 0.04 });
+    chipRow(t, 11.2, ["Monthly income", "Work days", "Hours per day"], 1010, ex);
+    ctx.restore();
+  }],
+  // 4. Add an item: type a price, see the hours
+  [12.3, 17.0, t => {
+    const ex = exitOf(t, 17.0);
+    ctx.save(); ctx.translate((1 - ex) * -80, 0);
+    const tx = 170;
+    eyebrow(t, 12.6, "01 · ADD AN ITEM", tx, 330, { alpha: ex });
+    words(t, 12.8, "TYPE A PRICE.", tx, 445, 92, { alpha: ex });
+    words(t, 13.0, [["SEE"], ["THE"], ["HOURS.", BLUE]], tx, 555, 92, { alpha: ex });
+    body(t, 13.6, "A live preview shows the work time while you type, before you spend a peso.", tx, 650, 34, 640, { alpha: ex });
+    const p1 = outQuint(prog(t, 12.6, 13.5));
+    const name = "Running shoes", price = "3500";
+    const n1 = Math.floor(name.length * prog(t, 13.5, 14.4)), n2 = Math.floor(price.length * prog(t, 14.6, 15.1));
+    device("add-light", 1300, lerp(1250, 545, p1), 880, { alpha: ex, glow: 0.45, over: () => {
+      ctx.textBaseline = "middle"; ctx.font = font(40, 500); ctx.fillStyle = INK;
+      if (n1 > 0) { ctx.fillStyle = FIELD; ctx.fillRect(60, 250, 660, 74); ctx.fillStyle = INK; ctx.fillText(name.slice(0, n1), 78, 290); }
+      if (n2 > 0) { ctx.fillStyle = FIELD; ctx.fillRect(60, 390, 660, 74); ctx.fillStyle = INK; ctx.fillText("₱" + price.slice(0, n2), 78, 428); }
+      const caretOn = Math.sin(t * 14) > 0;
+      if (caretOn && t > 13.4 && t < 15.2) {
+        ctx.font = font(40, 500);
+        const y = t < 14.5 ? 290 : 428, w = t < 14.5 ? ctx.measureText(name.slice(0, n1)).width : ctx.measureText("₱" + price.slice(0, n2)).width;
+        ctx.fillStyle = BLUE; ctx.fillRect(80 + w, y - 22, 4, 44);
+      }
+      ripple(390, 1596, 16.2, t, 200);
+    } });
+    clay(t, 15.25, "≈ 20.5 h of work", 1300 + 330, 640, { size: 34, color: GOLD, alpha: ex, rot: -0.04 });
+    ctx.restore();
+  }],
+  // 5. What it really costs: lift the cost card out of the detail screen
+  [16.7, 21.4, t => {
+    const ex = exitOf(t, 21.4);
+    ctx.save(); ctx.translate((1 - ex) * 80, 0);
+    const p1 = outQuint(prog(t, 16.9, 17.8));
+    const s = device("detail-light", lerp(-300, 440, p1), 545, 860, { alpha: ex, glow: 0.35 });
+    const tx = 1000;
+    eyebrow(t, 17.2, "02 · WHAT IT REALLY COSTS", tx, 200, { alpha: ex });
+    if (s) {
+      // cost card (screen px 33,395 714×495) lifts out and scales up
+      const z = outQuint(prog(t, 17.9, 18.9));
+      const sx = s.left + 33 * s.k, sy = s.top + 395 * s.k, sw = 714 * s.k, sh = 495 * s.k;
+      const dw = 640, dh = dw * 495 / 714, dx = tx, dy = 250;
+      if (z > 0) {
+        ctx.save(); ctx.globalAlpha = ex * 0.6 * z; ctx.strokeStyle = BLUE; ctx.lineWidth = 2; ctx.setLineDash([6, 8]);
+        ctx.beginPath(); ctx.moveTo(sx + sw, sy); ctx.lineTo(lerp(sx + sw, dx, z), lerp(sy, dy, z));
+        ctx.moveTo(sx + sw, sy + sh); ctx.lineTo(lerp(sx + sw, dx, z), lerp(sy + sh, dy + dh, z)); ctx.stroke();
+        ctx.restore();
+        const x = lerp(sx, dx, z), y = lerp(sy, dy, z), w = lerp(sw, dw, z), h = lerp(sh, dh, z);
+        ctx.save(); ctx.globalAlpha = ex;
+        ctx.shadowColor = "rgba(20,33,61,0.3)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 22;
+        ctx.beginPath(); ctx.roundRect(x, y, w, h, 40 * (w / 714)); ctx.fillStyle = "#DCE1EC"; ctx.fill();
+        ctx.shadowColor = "transparent"; ctx.clip();
+        ctx.drawImage(img["detail-light"], 33, 395, 714, 495, x, y, w, h);
+        ctx.restore();
+      }
+      // Kaya's verdict card follows
+      const v = outQuint(prog(t, 19.2, 20.0));
+      if (v > 0) {
+        const vw = 640, vh = vw * 190 / 714;
+        ctx.save(); ctx.globalAlpha = ex * v;
+        ctx.shadowColor = "rgba(20,33,61,0.25)"; ctx.shadowBlur = 40; ctx.shadowOffsetY = 16;
+        ctx.beginPath(); ctx.roundRect(tx, 250 + 640 * 495 / 714 + 30 + (1 - v) * 40, vw, vh, 34); ctx.fillStyle = "#F8E7A0"; ctx.fill();
+        ctx.shadowColor = "transparent"; ctx.clip();
+        ctx.drawImage(img["detail-light"], 33, 922, 714, 190, tx, 250 + 640 * 495 / 714 + 30 + (1 - v) * 40, vw, vh);
+        ctx.restore();
+      }
+    }
+    chipRow2(t, 20.1, ["Hours", "Days", "Weeks of wants budget"], tx, 1000, ex);
+    ctx.restore();
+  }],
+  // 6. 50/30/20: the donut sweeps in
+  [21.1, 25.6, t => {
+    const ex = exitOf(t, 25.6);
+    ctx.save(); ctx.translate((1 - ex) * -80, 0);
+    const p1 = outQuint(prog(t, 21.2, 22.0));
+    const sweep = inOutCubic(prog(t, 22.1, 23.3));
+    device("budget-light", 1350, lerp(1250, 545, p1), 880, { alpha: ex, glow: 0.4, over: () => {
+      // hide the donut, then reveal it clockwise
+      ctx.save(); ctx.fillStyle = "#FDFCFA"; ctx.beginPath(); ctx.arc(390, 540, 222, 0, 7); ctx.fill(); ctx.restore();
+      if (sweep > 0) {
+        ctx.save(); ctx.beginPath(); ctx.moveTo(390, 540); ctx.arc(390, 540, 230, -Math.PI / 2, -Math.PI / 2 + sweep * Math.PI * 2); ctx.closePath(); ctx.clip();
+        ctx.drawImage(img["budget-light"], 0, 0); ctx.restore();
+      }
+      ctx.save(); ctx.beginPath(); ctx.arc(390, 540, 128, 0, 7); ctx.clip(); ctx.drawImage(img["budget-light"], 0, 0); ctx.restore();
+    } });
+    const tx = 170;
+    eyebrow(t, 21.4, "03 · THE 50/30/20 RULE", tx, 330, { alpha: ex });
+    words(t, 21.6, "CHECKED AGAINST", tx, 445, 84, { alpha: ex });
+    words(t, 21.8, [["YOUR"], ["WANTS.", BLUE]], tx, 550, 84, { alpha: ex });
+    body(t, 22.3, "After-tax income splits into needs, wants and savings. Every item is judged against the 30% for wants.", tx, 640, 32, 660, { alpha: ex });
+    clay(t, 23.4, "Needs 50%", tx + 120, 860, { size: 28, color: BLUE, fg: BG, alpha: ex });
+    clay(t, 23.55, "Wants 30%", tx + 375, 860, { size: 28, color: GOLD, alpha: ex });
+    clay(t, 23.7, "Savings 20%", tx + 640, 860, { size: 28, color: INK, fg: BG, alpha: ex });
+    ctx.restore();
+  }],
+  // 7. Wishlist, light ↔ dark, offline
+  [25.3, 29.6, t => {
+    const ex = exitOf(t, 29.6);
+    ctx.save(); ctx.translate(0, (1 - ex) * -60);
+    eyebrow(t, 25.5, "04 · YOURS, EVERYWHERE", W / 2, 110, { align: "center", alpha: ex });
+    words(t, 25.6, [["WISHLIST."], ["LIGHT"], ["OR", BLUE], ["DARK.", BLUE], ["OFFLINE."]], W / 2, 205, 68, { align: "center", alpha: ex });
+    const items = [["wishlist-dark", "Sort by price or hours"], ["home-light", "Light ↔ Dark"], ["login-dark", "Secure sign-in"]];
+    items.forEach(([n, label], i) => {
+      const st = 25.9 + i * 0.22;
+      const p = outQuint(prog(t, st, st + 0.9));
+      const x = W / 2 + (i - 1) * 480, y = lerp(1250, 600, p) + Math.sin((t - st) * 1.6 + i) * 6;
+      const wipe = inOutCubic(prog(t, 27.3, 28.2));
+      device(n, x, y, 640, { alpha: ex, glow: i === 1 ? 0.45 : 0.2, over: i === 1 ? () => {
+        if (wipe > 0) { ctx.save(); ctx.beginPath(); ctx.arc(700, 60, 2000 * wipe, 0, 7); ctx.clip(); ctx.drawImage(img["home-dark"], 0, 0); ctx.restore(); }
+      } : null });
+      clay(t, st + 0.8, label, x, 975, { size: 26, alpha: ex });
+    });
+    ctx.restore();
+  }],
+  // 8. Outro
+  [29.3, DURATION, t => {
+    const sp = outBack(prog(t, 29.5, 30.2));
+    sun(W / 2, 240, 120 * sp, t * 0.5, clamp(sp));
+    words(t, 29.8, [["KAYA", INK], ["BA?", BLUE]], W / 2, 490, 140, { align: "center", stagger: 0.14, joined: true });
+    chipRow(t, 30.3, ["Flutter", "Riverpod", "Drift", "Supabase", "fl_chart"], 600, 1);
+    body(t, 30.9, "A personal project · In development, Android first", W / 2, 720, 34, 1600, { align: "center", color: INK });
+    body(t, 31.2, "Designed and built solo, from the clay design system to the local database.", W / 2, 775, 28, 1600, { align: "center" });
+  }],
+];
+
+function draw(T) {
+  const t = warp(T);
+  ctx.save();
+  ctx.clearRect(0, 0, W, H);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.letterSpacing = "0px";
+  background(t);
+  for (const [a, b, fn] of scenes) if (t >= a && t <= b) { ctx.save(); fn(t); ctx.restore(); }
+  brand(clamp(prog(t, 8.3, 8.9)) * (1 - prog(t, 28.9, 29.4)), t);
+  finish(T);
+  ctx.restore();
+}
+
+// ---------- audio: Kokoro voice + a soft synth bed, whooshes on cuts, pops on taps ----------
+async function mixAudio() {
+  const sr = 48000, ac = new OfflineAudioContext(2, Math.ceil(OUT * sr), sr);
+  const load = async f => ac.decodeAudioData(await (await fetch("voice/" + f)).arrayBuffer());
+  const comp = ac.createDynamicsCompressor();
+  comp.threshold.value = -20; comp.ratio.value = 3; comp.attack.value = 0.005; comp.release.value = 0.2;
+  comp.connect(ac.destination);
+  const voiceAt = [];
+  for (const c of timing.clips) {
+    const src = ac.createBufferSource(); src.buffer = await load(c.file);
+    src.connect(comp); src.start(c.at); voiceAt.push([c.at, c.at + c.dur]);
+  }
+  // pad: bright Gmaj9 voicing (sunnier than Ambatu's), ducked under the voice
+  const pad = ac.createGain(); pad.gain.setValueAtTime(0, 0);
+  pad.gain.linearRampToValueAtTime(0.05, 1.5);
+  for (const [a, b] of voiceAt) { pad.gain.setTargetAtTime(0.028, a - 0.1, 0.15); pad.gain.setTargetAtTime(0.05, b + 0.1, 0.4); }
+  pad.gain.setTargetAtTime(0, OUT - 1.5, 0.4);
+  const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 1500;
+  pad.connect(lp).connect(ac.destination);
+  for (const f of [196, 246.9, 293.7, 370, 440]) for (const d of [-4, 4]) {
+    const o = ac.createOscillator(); o.type = "triangle"; o.frequency.value = f; o.detune.value = d;
+    const g = ac.createGain(); g.gain.value = 0.18; o.connect(g).connect(pad); o.start(0); o.stop(OUT);
+  }
+  const noise = ac.createBuffer(1, sr * 2, sr);
+  { const d = noise.getChannelData(0); let s = 7; for (let i = 0; i < d.length; i++) { s = (s * 16807) % 2147483647; d[i] = s / 1073741823 - 1; } }
+  const whoosh = at => {
+    const src = ac.createBufferSource(); src.buffer = noise;
+    const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 1.2;
+    bp.frequency.setValueAtTime(300, at); bp.frequency.exponentialRampToValueAtTime(3200, at + 0.45); bp.frequency.exponentialRampToValueAtTime(600, at + 0.8);
+    const g = ac.createGain(); g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(0.09, at + 0.4); g.gain.linearRampToValueAtTime(0, at + 0.85);
+    src.connect(bp).connect(g).connect(ac.destination); src.start(at); src.stop(at + 0.9);
+  };
+  timing.newBounds.slice(1, -1).forEach(b => whoosh(b - 0.55));
+  const pop = (at, f = 880, gain = 0.12) => {
+    const o = ac.createOscillator(); o.type = "sine";
+    o.frequency.setValueAtTime(f, at); o.frequency.exponentialRampToValueAtTime(f * 1.6, at + 0.08);
+    const g = ac.createGain(); g.gain.setValueAtTime(0, at); g.gain.linearRampToValueAtTime(gain, at + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, at + 0.18);
+    o.connect(g).connect(ac.destination); o.start(at); o.stop(at + 0.2);
+  };
+  pop(unwarp(0.4), 660); pop(unwarp(2.4), 880, 0.08); pop(unwarp(2.9), 1180, 0.08); pop(unwarp(6.3), 740, 0.08);
+  pop(unwarp(10.9), 990, 0.08); pop(unwarp(15.25), 990); pop(unwarp(16.2), 760, 0.08);
+  pop(unwarp(17.9), 820, 0.08); pop(unwarp(19.2), 990, 0.08); pop(unwarp(23.4), 700, 0.06); pop(unwarp(23.55), 800, 0.06);
+  pop(unwarp(23.7), 900, 0.06); pop(unwarp(27.3), 700, 0.08); pop(unwarp(29.5), 660);
+  const buf = await ac.startRendering();
+  let peak = 0;
+  for (let ch = 0; ch < 2; ch++) for (const v of buf.getChannelData(ch)) peak = Math.max(peak, Math.abs(v));
+  const k = 0.89 / peak; // normalise to -1 dBFS
+  for (let ch = 0; ch < 2; ch++) { const d = buf.getChannelData(ch); for (let i = 0; i < d.length; i++) d[i] *= k; }
+  return buf;
+}
+
+// ---------- export: deterministic, frame by frame ----------
+async function render(name = "kayaba-demo.webm", bitrate = 1_000_000) {
+  const muxer = new WebMMuxer.Muxer({
+    target: new WebMMuxer.ArrayBufferTarget(),
+    video: { codec: "V_VP9", width: W, height: H, frameRate: FPS },
+    audio: { codec: "A_OPUS", sampleRate: 48000, numberOfChannels: 2 },
+  });
+  const ab = await mixAudio();
+  const aenc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: e => { throw e; } });
+  aenc.configure({ codec: "opus", sampleRate: 48000, numberOfChannels: 2, bitrate: 96000 });
+  let apos = 0;
+  const feedAudio = untilSec => {
+    const until = Math.min(ab.length, Math.round(untilSec * 48000));
+    while (apos < until) {
+      const n = Math.min(4800, ab.length - apos), data = new Float32Array(n * 2);
+      data.set(ab.getChannelData(0).subarray(apos, apos + n), 0);
+      data.set(ab.getChannelData(1).subarray(apos, apos + n), n);
+      const ad = new AudioData({ format: "f32-planar", sampleRate: 48000, numberOfFrames: n, numberOfChannels: 2, timestamp: Math.round((apos / 48000) * 1e6), data });
+      aenc.encode(ad); ad.close(); apos += n;
+    }
+  };
+  const enc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: e => { throw e; } });
+  enc.configure({ codec: "vp09.00.10.08", width: W, height: H, bitrate, bitrateMode: "variable", latencyMode: "quality", framerate: FPS });
+  const n = Math.round(OUT * FPS);
+  for (let i = 0; i < n; i++) {
+    draw(i / FPS);
+    const f = new VideoFrame(cv, { timestamp: Math.round((i * 1e6) / FPS), duration: Math.round(1e6 / FPS) });
+    enc.encode(f, { keyFrame: i % (FPS * 4) === 0 });
+    f.close();
+    feedAudio((i + 1) / FPS);
+    while (enc.encodeQueueSize > 8) await new Promise(r => setTimeout(r, 1));
+    if (i % 60 === 0) document.title = `rendering ${i}/${n}`;
+  }
+  feedAudio(OUT + 1);
+  await enc.flush(); await aenc.flush();
+  muxer.finalize();
+  const res = await fetch(`/save?name=${encodeURIComponent(name)}`, { method: "POST", body: muxer.target.buffer });
+  document.title = "done";
+  return res.text();
+}
+
+// stills for review: POST /save a PNG of video time T
+let showBar = true;
+async function still(T, name, bar = true) {
+  showBar = bar; draw(T); showBar = true;
+  const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+  return (await fetch(`/save?name=${name}`, { method: "POST", body: blob })).text();
+}
+
+window.ready = loadAll().then(() => draw(2.5));
+Object.assign(window, { draw, render, still, unwarp });
+</script>
+</body>
+</html>

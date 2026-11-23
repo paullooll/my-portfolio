@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
-
-type Theme = "light" | "dark";
+import { safeStorage } from "@/lib/storage";
+import { resolveInitialTheme, type Theme } from "@/lib/theme";
 
 interface ThemeContextType {
   theme: Theme;
@@ -9,43 +9,41 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+const storage = safeStorage("local");
 
 interface ThemeProviderProps {
   children: React.ReactNode;
-  defaultTheme?: Theme;
   switchable?: boolean;
 }
 
+/** Theme: stored choice, else dark. Persisted when switchable. */
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
   switchable = false,
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(() => {
-    if (switchable) {
-      const stored = localStorage.getItem("theme");
-      return (stored as Theme) || defaultTheme;
+    // Browser: the inline script in index.html already applied the theme class
+    // before first paint, so start from it. Prerender (no document): dark.
+    if (typeof document !== "undefined") {
+      return document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light";
     }
-    return defaultTheme;
+    return resolveInitialTheme(switchable ? storage.get("theme") : null);
   });
 
   useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  }, [theme]);
 
-    if (switchable) {
-      localStorage.setItem("theme", theme);
-    }
-  }, [theme, switchable]);
-
+  // Only an explicit toggle is remembered.
   const toggleTheme = switchable
-    ? () => {
-        setTheme(prev => (prev === "light" ? "dark" : "light"));
-      }
+    ? () =>
+        setTheme(prev => {
+          const next = prev === "light" ? "dark" : "light";
+          storage.set("theme", next);
+          return next;
+        })
     : undefined;
 
   return (
@@ -57,8 +55,6 @@ export function ThemeProvider({
 
 export function useTheme() {
   const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error("useTheme must be used within ThemeProvider");
-  }
+  if (!context) throw new Error("useTheme must be used within ThemeProvider");
   return context;
 }

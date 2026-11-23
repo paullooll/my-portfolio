@@ -1,0 +1,30 @@
+[
+  {
+    "id": "c1", "title": "Recursion in Python", "updatedAt": "2026-11-21T19:42:00.000",
+    "messages": [
+      { "id": "m1", "sender": "user", "text": "Can you explain recursion with a short Python example?", "createdAt": "2026-11-21T19:41:00.000" },
+      { "id": "m2", "sender": "assistant", "text": "Sure! **Recursion** is when a function calls itself to solve a smaller piece of the same problem.\n\nEvery recursive function needs two parts:\n\n1. A **base case** that stops the calls\n2. A **recursive step** that moves toward it\n\n```python\ndef factorial(n):\n    if n <= 1:      # base case\n        return 1\n    return n * factorial(n - 1)\n\nprint(factorial(5))  # 120\n```\n\nEach call waits for the next one, then multiplies on the way back up.", "createdAt": "2026-11-21T19:42:00.000" }
+    ]
+  },
+  {
+    "id": "c2", "title": "Study plan for finals", "updatedAt": "2026-11-20T21:10:00.000",
+    "messages": [
+      { "id": "m3", "sender": "user", "text": "Make me a 3-day study plan for my finals.", "createdAt": "2026-11-20T21:09:00.000" },
+      { "id": "m4", "sender": "assistant", "text": "Here's a simple plan:\n\n- **Day 1:** review notes, list weak topics\n- **Day 2:** practice problems on those topics\n- **Day 3:** mock exam, then rest early", "createdAt": "2026-11-20T21:10:00.000" }
+    ]
+  },
+  {
+    "id": "c3", "title": "What is an API?", "updatedAt": "2026-11-19T15:30:00.000",
+    "messages": [
+      { "id": "m5", "sender": "user", "text": "What is an API, in simple words?", "createdAt": "2026-11-19T15:29:00.000" },
+      { "id": "m6", "sender": "assistant", "text": "An **API** is a menu one program offers another: it lists what you can ask for and how to ask.", "createdAt": "2026-11-19T15:30:00.000" }
+    ]
+  },
+  {
+    "id": "c4", "title": "Flutter vs React Native", "updatedAt": "2026-11-18T10:05:00.000",
+    "messages": [
+      { "id": "m7", "sender": "user", "text": "Flutter or React Native for a school project?", "createdAt": "2026-11-18T10:04:00.000" },
+      { "id": "m8", "sender": "assistant", "text": "Both work. **Flutter** gives you one UI toolkit and fast hot reload.", "createdAt": "2026-11-18T10:05:00.000" }
+    ]
+  }
+]

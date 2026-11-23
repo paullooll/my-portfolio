@@ -2,18 +2,63 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
-    <meta name="description" content="Richie Paul Aquiño — an early-career software and web developer learning in public." />
-    <title>Richie Paul Aquiño — Developer in Progress</title>
-    <link rel="icon" type="image/png" href="/icon.png" />
-    <link rel="apple-touch-icon" href="/icon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght,SOFT@9..144,400,0..100&display=swap" rel="stylesheet" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- seo -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex-mono-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/ibm-plex-sans-latin-400-normal.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <script>
+      /* Set the theme class before first paint to avoid a flash (mirrors src/lib/theme.ts):
+         a stored choice wins, otherwise dark. */
+      (function () {
+        var t = null;
+        try {
+          t = localStorage.getItem("theme");
+        } catch (e) {}
+        if (t !== "light") document.documentElement.classList.add("dark");
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main
+        style="
+          font-family: system-ui, sans-serif;
+          max-width: 640px;
+          margin: 48px auto;
+          padding: 0 16px;
+          line-height: 1.6;
+        "
+      >
+        <h1>Richie Paul Aquiño</h1>
+        <p>
+          Junior Fullstack Developer at the Iloilo City Government. This
+          portfolio needs JavaScript for its interactive parts.
+        </p>
+        <p>
+          <a href="https://github.com/paullooll">GitHub</a> ·
+          <a href="https://www.linkedin.com/in/richie-paul-aquiño-2bb196265"
+            >LinkedIn</a
+          >
+          · <a href="mailto:richiepaul.aquino@gmail.com">Email</a>
+        </p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
-    <script defer src="%VITE_ANALYTICS_ENDPOINT%/umami" data-website-id="%VITE_ANALYTICS_WEBSITE_ID%"></script>
   </body>
 </html>

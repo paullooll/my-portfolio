@@ -1,0 +1,105 @@
+/* Haunt colours + per-state motion. */
+.haunt {
+  overflow: visible;
+  filter: drop-shadow(
+    0 0 6px color-mix(in srgb, var(--accent) 35%, transparent)
+  );
+}
+.h-outline {
+  fill: var(--haunt-outline);
+}
+.h-body {
+  fill: var(--haunt-body);
+}
+.h-eye {
+  fill: var(--accent);
+}
+.h-pupil {
+  fill: var(--bg);
+}
+.h-mouth {
+  fill: var(--haunt-mouth);
+}
+.h-teeth {
+  fill: var(--haunt-teeth);
+}
+.haunt-zzz {
+  font-family: var(--font-display);
+  font-size: 4px;
+  fill: var(--accent);
+}
+.haunt-eyes {
+  transform: translate(var(--look-x, 0px), var(--look-y, 0px));
+  transition: transform 0.15s steps(2);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .haunt-idle,
+  .haunt-talk,
+  .haunt-surprised {
+    animation: haunt-bob 2.4s steps(6) infinite;
+  }
+  .haunt-idle .haunt-body-g {
+    animation: haunt-glitch 7s steps(1) infinite;
+  }
+  .haunt-talk .h-teeth {
+    animation: haunt-chatter 0.24s steps(2) infinite;
+  }
+  .haunt-wave {
+    animation: haunt-wave 0.6s steps(3) 2;
+    transform-origin: 50% 90%;
+  }
+  .haunt-point-left {
+    transform: scaleX(-1) rotate(-8deg);
+  }
+  .haunt-point-right {
+    transform: rotate(8deg);
+  }
+  .haunt-phase {
+    animation: haunt-phase 1.2s steps(6) 1;
+  }
+  .haunt-sleep {
+    animation: haunt-bob 4s steps(4) infinite;
+  }
+  .haunt-sleep .haunt-zzz {
+    animation: blink 1.6s steps(2) infinite;
+  }
+}
+
+@keyframes haunt-bob {
+  50% {
+    transform: translateY(-4px);
+  }
+}
+@keyframes haunt-glitch {
+  0%,
+  93%,
+  100% {
+    transform: none;
+  }
+  94% {
+    transform: translateX(1px);
+  }
+  96% {
+    transform: translateX(-1px);
+  }
+}
+@keyframes haunt-chatter {
+  50% {
+    opacity: 0.2;
+  }
+}
+@keyframes haunt-wave {
+  33% {
+    transform: rotate(-10deg);
+  }
+  66% {
+    transform: rotate(10deg);
+  }
+}
+@keyframes haunt-phase {
+  50% {
+    opacity: 0.15;
+    transform: translateY(6px);
+  }
+}
